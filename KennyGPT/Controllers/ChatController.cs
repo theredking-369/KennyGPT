@@ -77,6 +77,44 @@ namespace KennyGPT.Controllers
             }
         }
 
+
+        [HttpGet("conversations")]
+        public async Task<ActionResult<List<MConversation>>> GetConversations()
+        {
+            try
+            {
+                var conversations = await _dbContext.Conversations
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(50)
+                    .ToListAsync();
+
+                return Ok(conversations);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("conversations/{conversationId}/messages")]
+        public async Task<ActionResult<List<MChatMessage>>> GetConversationMessages(string conversationId)
+        {
+            try
+            {
+                var messages = await _dbContext.ChatMessages
+                    .Where(m => m.ConversationId == conversationId)
+                    .OrderBy(m => m.Timestamp)
+                    .ToListAsync();
+
+                return Ok(messages);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
+
+
         private async Task<MConversation> GetOrCreateConversation(string? conversationId)
         {
             if (!string.IsNullOrEmpty(conversationId))

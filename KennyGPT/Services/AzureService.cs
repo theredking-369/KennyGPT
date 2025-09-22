@@ -14,7 +14,6 @@ namespace KennyGPT.Services
     {
         private readonly AzureOpenAIClient _client;
         private readonly string _deploymentName;
-
         public AzureService(IConfiguration configuration)
         {
             var endpoint = configuration["AzureOpenAI:Endpoint"];
@@ -24,13 +23,9 @@ namespace KennyGPT.Services
             _client = new AzureOpenAIClient(new Uri(endpoint), new AzureKeyCredential(apiKey));
         }
 
-
-
-        
-            
-
         public async Task<string> GetChatCompletion(List<Models.MChatMessage> messages, string? systemPrompt = null)
         {
+            
             var chatClient = _client.GetChatClient(_deploymentName);
 
             var chatMessages = new List<ChatMessage>();
@@ -56,6 +51,8 @@ namespace KennyGPT.Services
 
             return completion.Value.Content[0].Text;
         }
+
+        
     }
     
 }

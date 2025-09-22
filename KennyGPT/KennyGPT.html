@@ -582,7 +582,7 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
             // Load conversations from localStorage
-            loadConversationsFromStorage();
+            loadConversationsFromBackend();
 
             // Load last active conversation
             const lastConversationId = localStorage.getItem('lastConversationId');
@@ -666,31 +666,50 @@
             }
         }
 
-        function loadConversation(conversationId) {
-            const conversation = conversations.find(c => c.id === conversationId);
-            if (!conversation) return;
+        async function loadConversationsFromBackend() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/Chat/conversations`);
+                if (response.ok) {
+                    const backendConversations = await response.json();
 
-            currentConversationId = conversationId;
-            saveCurrentConversation();
+                    // Convert backend format to frontend format
+                    conversations = backendConversations.map(conv => ({
+                        id: conv.id,
+                        title: conv.title,
+                        createdAt: conv.createdAt,
+                        messages: [] // Will load on demand
+                    }));
 
-            // Clear chat and load messages
-            chatMessages.innerHTML = '';
-
-            conversation.messages.forEach(msg => {
-                addMessageToDOM(msg.content, msg.isUser);
-            });
-
-            if (conversation.messages.length === 0) {
-                showEmptyState();
+                    renderConversationsList();
+                }
+            } catch (error) {
+                console.log('Could not load conversations from backend, using local storage');
+                loadConversationsFromStorage(); // Fallback to local storage
             }
+        }
 
-            // Update UI
-            conversationTitle.textContent = conversation.title;
-            updateActiveConversation();
+        async function loadConversation(conversationId) {
+            try {
+                // Load messages from backend
+                const response = await fetch(`${API_BASE_URL}/Chat/conversations/${conversationId}/messages`);
+                if (response.ok) {
+                    const messages = await response.json();
 
-            // Close mobile sidebar
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
+                    currentConversationId = conversationId;
+                    chatMessages.innerHTML = '';
+
+                    messages.forEach(msg => {
+                        addMessageToDOM(msg.content, msg.role === 'user');
+                    });
+
+                    if (messages.length === 0) {
+                        showEmptyState();
+                    }
+
+                    updateUIForConversation(conversationId);
+                }
+            } catch (error) {
+                console.error('Error loading conversation:', error);
             }
         }
 
@@ -849,7 +868,7 @@
                     systemPrompt: systemPrompt || null
                 };
 
-                const response = await fetch(`${API_BASE_URL}/chat/send`, {
+                const response = await fetch(`${API_BASE_URL}/Chat/send`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
