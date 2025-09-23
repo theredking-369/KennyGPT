@@ -30,9 +30,17 @@ namespace KennyGPT.Services
 
             var chatMessages = new List<ChatMessage>();
 
-            if (!string.IsNullOrEmpty(systemPrompt))
+            //Add current date/time to system prompt
+            var currentDateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var timeZone = TimeZoneInfo.Local.DisplayName;
+
+            var enhancedSystemPrompt = $@"{systemPrompt}
+CURRENT DATE & TIME: {currentDateTime} ({timeZone})
+Note: You now have access to the current date and time. Use this information when relevant to user queries about dates, times, or recent events.";
+
+            if (!string.IsNullOrEmpty(enhancedSystemPrompt))
             {
-                chatMessages.Add(ChatMessage.CreateSystemMessage(systemPrompt));
+                chatMessages.Add(ChatMessage.CreateSystemMessage(enhancedSystemPrompt));
             }
 
             foreach (var message in messages)

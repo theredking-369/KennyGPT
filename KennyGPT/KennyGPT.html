@@ -431,7 +431,72 @@
                 background: #9ca3af;
             }
 
-        /* Mobile Responsive */
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+            body.dark-mode .chat-container {
+                background: #1e1e1e;
+                color: #e0e0e0;
+            }
+
+            body.dark-mode .chat-header {
+                background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            }
+
+            body.dark-mode .system-prompt-section {
+                background: #2d3748;
+                border-bottom-color: #4a5568;
+            }
+
+            body.dark-mode .system-prompt-input {
+                background: #1a202c;
+                border-color: #4a5568;
+                color: #e0e0e0;
+            }
+
+                body.dark-mode .system-prompt-input:focus {
+                    border-color: #667eea;
+                }
+
+            body.dark-mode .chat-messages {
+                background: #1a1a1a;
+            }
+
+            body.dark-mode .message.assistant .message-content {
+                background: #2d3748;
+                color: #e0e0e0;
+                border-color: #4a5568;
+            }
+
+            body.dark-mode .chat-input-container {
+                background: #2d3748;
+                border-top-color: #4a5568;
+            }
+
+            body.dark-mode .chat-input {
+                background: #1a202c;
+                border-color: #4a5568;
+                color: #e0e0e0;
+            }
+
+                body.dark-mode .chat-input:focus {
+                    border-color: #667eea;
+                }
+
+            body.dark-mode .empty-state h3 {
+                color: #e0e0e0;
+            }
+
+            body.dark-mode .empty-state {
+                color: #a0a0a0;
+            }
+
+            body.dark-mode .loading {
+                color: #a0a0a0;
+            }
+
         @media (max-width: 768px) {
             .app-container {
                 width: 100%;
@@ -509,6 +574,9 @@
             <div class="sidebar-header">
                 <h2>KennyGPT</h2>
                 <p>Your Personal AI Assistant</p>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                    <span class="theme-icon">🌙</span>
+                </button>
             </div>
 
             <button class="new-chat-btn" onclick="startNewConversation()">
@@ -562,7 +630,7 @@
 
     <script>
         // Configuration
-        const API_BASE_URL = 'https://localhost:7066/api';
+        const API_BASE_URL = 'https://localhost:5001/api';
 
         // Global variables
         let currentConversationId = null;
@@ -581,8 +649,15 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
+            // Load theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeToggle').innerHTML = '<span class="theme-icon">☀️</span>';
+            }
+
             // Load conversations from localStorage
-            loadConversationsFromBackend();
+            loadConversationsFromStorage();
 
             // Load last active conversation
             const lastConversationId = localStorage.getItem('lastConversationId');
@@ -666,50 +741,31 @@
             }
         }
 
-        async function loadConversationsFromBackend() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/Chat/conversations`);
-                if (response.ok) {
-                    const backendConversations = await response.json();
+        function loadConversation(conversationId) {
+            const conversation = conversations.find(c => c.id === conversationId);
+            if (!conversation) return;
 
-                    // Convert backend format to frontend format
-                    conversations = backendConversations.map(conv => ({
-                        id: conv.id,
-                        title: conv.title,
-                        createdAt: conv.createdAt,
-                        messages: [] // Will load on demand
-                    }));
+            currentConversationId = conversationId;
+            saveCurrentConversation();
 
-                    renderConversationsList();
-                }
-            } catch (error) {
-                console.log('Could not load conversations from backend, using local storage');
-                loadConversationsFromStorage(); // Fallback to local storage
+            // Clear chat and load messages
+            chatMessages.innerHTML = '';
+
+            conversation.messages.forEach(msg => {
+                addMessageToDOM(msg.content, msg.isUser);
+            });
+
+            if (conversation.messages.length === 0) {
+                showEmptyState();
             }
-        }
 
-        async function loadConversation(conversationId) {
-            try {
-                // Load messages from backend
-                const response = await fetch(`${API_BASE_URL}/Chat/conversations/${conversationId}/messages`);
-                if (response.ok) {
-                    const messages = await response.json();
+            // Update UI
+            conversationTitle.textContent = conversation.title;
+            updateActiveConversation();
 
-                    currentConversationId = conversationId;
-                    chatMessages.innerHTML = '';
-
-                    messages.forEach(msg => {
-                        addMessageToDOM(msg.content, msg.role === 'user');
-                    });
-
-                    if (messages.length === 0) {
-                        showEmptyState();
-                    }
-
-                    updateUIForConversation(conversationId);
-                }
-            } catch (error) {
-                console.error('Error loading conversation:', error);
+            // Close mobile sidebar
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
             }
         }
 
@@ -825,6 +881,21 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('themeToggle');
+
+            body.classList.toggle('dark-mode');
+
+            if (body.classList.contains('dark-mode')) {
+                themeToggle.innerHTML = '<span class="theme-icon">☀️</span>';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeToggle.innerHTML = '<span class="theme-icon">🌙</span>';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
         function toggleSidebar() {
             if (window.innerWidth <= 768) {
                 sidebar.classList.toggle('open');
@@ -868,7 +939,7 @@
                     systemPrompt: systemPrompt || null
                 };
 
-                const response = await fetch(`${API_BASE_URL}/Chat/send`, {
+                const response = await fetch(`${API_BASE_URL}/chat/send`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

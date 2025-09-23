@@ -2,7 +2,6 @@
 using KennyGPT.Models;
 using KennyGPT.Interfaces;
 using KennyGPT.Services;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -130,7 +129,7 @@ namespace KennyGPT.Controllers
             var newConversation = new MConversation
             {
                 Id = Guid.NewGuid().ToString(),
-                UserId = "anonymous", // Replace with actual user ID from authentication
+                UserId = "anonymous", // Replace with actual user ID from authentication ... PS I don't think this is important when this model is private ... I am still learning though
                 Title = "New Conversation",
                 CreatedAt = DateTime.UtcNow
             };
