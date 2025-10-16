@@ -24,6 +24,7 @@ namespace KennyGPT
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddScoped<IAzureService, AzureService>();
+            builder.Services.AddHttpClient<ISerpAPIService, SerpAPIService>();
 
             builder.Services.AddCors(options =>
             {
