@@ -30,6 +30,97 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
+        /* Login Modal Styles */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+            .login-modal.hidden {
+                display: none;
+            }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+            .login-box h2 {
+                margin-bottom: 10px;
+                color: #333;
+                font-size: 28px;
+            }
+
+            .login-box p {
+                color: #666;
+                margin-bottom: 30px;
+                font-size: 14px;
+            }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+            .login-input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .login-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            }
+
+            .login-button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+        .login-error {
+            color: #dc3545;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+            .login-error.show {
+                display: block;
+            }
+
         /* Sidebar Styles */
         .sidebar {
             width: 300px;
@@ -44,6 +135,7 @@
             padding: 20px;
             background: #2d2d2d;
             border-bottom: 1px solid #404040;
+            position: relative;
         }
 
             .sidebar-header h2 {
@@ -56,10 +148,49 @@
                 opacity: 0.7;
             }
 
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+            .theme-toggle:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: scale(1.1);
+            }
+
+        .logout-btn {
+            width: calc(100% - 40px);
+            padding: 10px;
+            margin: 10px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+            .logout-btn:hover {
+                background: #c82333;
+                transform: translateY(-1px);
+            }
+
         .new-chat-btn {
-            width: 100%;
+            width: calc(100% - 40px);
             padding: 12px 20px;
-            margin: 20px;
+            margin: 10px 20px;
             margin-bottom: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -544,6 +675,10 @@
             .chat-input-container {
                 padding: 15px;
             }
+
+            .login-box {
+                padding: 30px 20px;
+            }
         }
 
         /* Overlay for mobile */
@@ -566,6 +701,25 @@
     </style>
 </head>
 <body>
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <h2>🔐 KennyGPT</h2>
+            <p>Enter your API key to continue</p>
+            <input type="password"
+                   id="apiKeyInput"
+                   class="login-input"
+                   placeholder="Your API Key"
+                   autocomplete="off">
+            <button class="login-button" onclick="authenticate()">
+                Unlock Access
+            </button>
+            <div class="login-error" id="loginError">
+                Invalid API key. Please try again.
+            </div>
+        </div>
+    </div>
+
     <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
 
     <div class="app-container">
@@ -578,6 +732,10 @@
                     <span class="theme-icon">🌙</span>
                 </button>
             </div>
+
+            <button class="logout-btn" onclick="logout()">
+                🚪 Logout
+            </button>
 
             <button class="new-chat-btn" onclick="startNewConversation()">
                 + New Conversation
@@ -629,13 +787,24 @@
     </div>
 
     <script>
-        // Configuration
-        const API_BASE_URL = 'https://localhost:7066/api';
+        // Configuration - UPDATE THESE AFTER DEPLOYMENT
+        const CONFIG = {
+            // Change this to your Azure App Service URL after deployment
+            API_BASE_URL: window.location.hostname === 'localhost'
+                ? 'https://localhost:7066/api'
+                : 'https://kennygpt-api.azurewebsites.net/api',
+
+            // For testing, you can hardcode API key check on client (NOT RECOMMENDED for production)
+            // Better: Implement ApiKeyMiddleware in your backend
+            REQUIRE_AUTH: true
+        };
 
         // Global variables
         let currentConversationId = null;
         let isLoading = false;
         let conversations = [];
+        let apiKey = null;
+        let isAuthenticated = false;
 
         // DOM Elements
         const chatMessages = document.getElementById('chatMessages');
@@ -646,9 +815,86 @@
         const conversationTitle = document.getElementById('conversationTitle');
         const sidebar = document.getElementById('sidebar');
         const mobileOverlay = document.getElementById('mobileOverlay');
+        const loginModal = document.getElementById('loginModal');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const loginError = document.getElementById('loginError');
+
+        // Authentication Functions
+        function checkAuthentication() {
+            if (!CONFIG.REQUIRE_AUTH) {
+                loginModal.classList.add('hidden');
+                isAuthenticated = true;
+                return;
+            }
+
+            // Check if API key exists in sessionStorage
+            const savedApiKey = sessionStorage.getItem('kennygpt_api_key');
+            if (savedApiKey) {
+                apiKey = savedApiKey;
+                loginModal.classList.add('hidden');
+                isAuthenticated = true;
+            } else {
+                loginModal.classList.remove('hidden');
+                apiKeyInput.focus();
+            }
+        }
+
+        async function authenticate() {
+            const inputKey = apiKeyInput.value.trim();
+
+            if (!inputKey) {
+                showLoginError('Please enter an API key');
+                return;
+            }
+
+            loginError.classList.remove('show');
+
+            try {
+                // Test the API key by making a test request
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/test`, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-Key': inputKey
+                    }
+                });
+
+                if (response.ok) {
+                    // API key is valid
+                    apiKey = inputKey;
+                    sessionStorage.setItem('kennygpt_api_key', inputKey);
+                    isAuthenticated = true;
+                    loginModal.classList.add('hidden');
+                    apiKeyInput.value = '';
+                } else {
+                    showLoginError('Invalid API key');
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showLoginError('Connection failed. Check your backend.');
+            }
+        }
+
+        function showLoginError(message) {
+            loginError.textContent = message;
+            loginError.classList.add('show');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('kennygpt_api_key');
+                apiKey = null;
+                isAuthenticated = false;
+                loginModal.classList.remove('hidden');
+                apiKeyInput.value = '';
+                apiKeyInput.focus();
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
+            // Check authentication first
+            checkAuthentication();
+
             // Load theme preference
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'dark') {
@@ -664,6 +910,13 @@
             if (lastConversationId && conversations.find(c => c.id === lastConversationId)) {
                 loadConversation(lastConversationId);
             }
+
+            // Enter key to authenticate
+            apiKeyInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    authenticate();
+                }
+            });
 
             messageInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -905,6 +1158,11 @@
 
         // API Functions
         async function sendMessage() {
+            if (!isAuthenticated) {
+                alert('Please login first');
+                return;
+            }
+
             if (isLoading) return;
 
             const message = messageInput.value.trim();
@@ -939,13 +1197,26 @@
                     systemPrompt: systemPrompt || null
                 };
 
-                const response = await fetch(`${API_BASE_URL}/chat/send`, {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                // Add API key to headers if authentication is required
+                if (CONFIG.REQUIRE_AUTH && apiKey) {
+                    headers['X-API-Key'] = apiKey;
+                }
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/send`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify(requestBody)
                 });
+
+                if (response.status === 401) {
+                    // Unauthorized - logout and show login
+                    logout();
+                    throw new Error('Session expired. Please login again.');
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -970,11 +1241,7 @@
             } catch (error) {
                 console.error('Error sending message:', error);
                 loadingContentDiv.innerHTML = '';
-                loadingContentDiv.innerHTML = '<div style="color: #dc3545;">❌ Sorry, something went wrong. Please check your connection and try again.</div>';
-
-                if (error.message.includes('Failed to fetch')) {
-                    loadingContentDiv.innerHTML = '<div style="color: #dc3545;">❌ Connection failed. Make sure your backend is running on https://localhost:5001 and CORS is enabled.</div>';
-                }
+                loadingContentDiv.innerHTML = `<div style="color: #dc3545;">❌ ${error.message || 'Sorry, something went wrong. Please try again.'}</div>`;
             } finally {
                 isLoading = false;
                 sendButton.disabled = false;

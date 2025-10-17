@@ -1,0 +1,21 @@
+{
+  "storageAccounts": "st",
+  "keyVaults": "kv",
+  "webSitesAppService": "app",
+  "webServerFarms": "plan",
+  "sqlServers": "sql",
+  "sqlDatabases": "sqldb",
+  "applicationInsights": "appi",
+  "logAnalyticsWorkspaces": "log",
+  "managedIdentity": "id",
+  "containerRegistries": "cr",
+  "containerApps": "ca",
+  "containerAppsEnvironments": "cae",
+  "cosmosDbAccounts": "cosmos",
+  "redisCaches": "redis",
+  "serviceBusNamespaces": "sb",
+  "eventHubNamespaces": "evhns",
+  "cognitiveServices": "cs",
+  "searchServices": "srch",
+  "apiManagementService": "apim"
+}

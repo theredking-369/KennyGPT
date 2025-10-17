@@ -113,6 +113,11 @@ namespace KennyGPT.Controllers
             }
         }
 
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            return Ok(new { message = "API is working!", timestamp = DateTime.UtcNow });
+        }
 
         private async Task<MConversation> GetOrCreateConversation(string? conversationId)
         {

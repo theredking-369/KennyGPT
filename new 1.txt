@@ -1,3 +1,0 @@
-"Endpoint": "https://kennygptservice.openai.azure.com/",
-    "ApiKey": "ER7BC4Zq5R5hjOfDh1NJWty0bqvKIw8GVOzn1HOJPNMZbFGenvcAJQQJ99BIACYeBjFXJ3w3AAABACOGwki8",
-    "DeploymentName": "KennyBot"
