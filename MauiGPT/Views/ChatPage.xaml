@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:MauiGPT.ViewModels"
+             xmlns:models="clr-namespace:MauiGPT.Models"
+             xmlns:local="clr-namespace:MauiGPT.Services"
+             x:Class="MauiGPT.Views.ChatPage"
+             x:DataType="viewmodels:ChatViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="RoryGPT">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IsEnabled="False" IsVisible="False"/>
+    </Shell.BackButtonBehavior>
+
+    <Grid>
+        <!-- Sidebar (initially hidden) -->
+        <Border x:Name="SidebarOverlay"
+                IsVisible="False"
+                BackgroundColor="#80000000"
+                ZIndex="10">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnOverlayTapped"/>
+            </Border.GestureRecognizers>
+        </Border>
+
+        <Border x:Name="Sidebar"
+                TranslationX="-300"
+                WidthRequest="300"
+                BackgroundColor="#1a1a1a"
+                HorizontalOptions="Start"
+                ZIndex="11">
+            <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+                
+                <!-- Header -->
+                <Border Grid.Row="0"
+                        BackgroundColor="#2d2d2d"
+                        Padding="20"
+                        Margin="0,0,0,1">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="RoryGPT" 
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   TextColor="White"/>
+                            <Label Text="Your Personal AI Assistant" 
+                                   FontSize="12"
+                                   TextColor="White"
+                                   Opacity="0.7"/>
+                        </VerticalStackLayout>
+                        
+                        <!-- Theme Toggle Button -->
+                        <Button Grid.Column="1"
+                                Text="{Binding Source={x:Static local:ThemeService.Instance}, Path=IsDarkMode, Converter={StaticResource ThemeIconConverter}}"
+                                BackgroundColor="Transparent"
+                                TextColor="White"
+                                FontSize="20"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                CornerRadius="20"
+                                Padding="0"
+                                Clicked="OnThemeToggled"/>
+                    </Grid>
+                </Border>
+
+                <!-- Logout Button -->
+                <Button Grid.Row="1"
+                        Text="?? Logout"
+                        Command="{Binding LogoutCommand}"
+                        BackgroundColor="#dc3545"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Margin="20,10"
+                        HeightRequest="40"
+                        CornerRadius="8"/>
+
+                <!-- New Chat Button -->
+                <Button Grid.Row="2"
+                        Text="+ New Conversation"
+                        Command="{Binding NewConversationCommand}"
+                        BackgroundColor="#667eea"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        Margin="20,0,20,10"
+                        HeightRequest="45"
+                        CornerRadius="8"/>
+
+                <!-- Conversations List -->
+                <Border Grid.Row="3"
+                        BackgroundColor="#2d2d2d"
+                        Margin="0,1,0,0">
+                    <Grid RowDefinitions="Auto,*">
+                        <Label Grid.Row="0"
+                               Text="Recent Conversations"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="#ccc"
+                               Padding="20,15,20,10"/>
+
+                        <CollectionView Grid.Row="1"
+                                      ItemsSource="{Binding Conversations}">
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout Padding="20"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center">
+                                    <Label Text="No conversations yet"
+                                           TextColor="#666"
+                                           FontSize="14"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="Start chatting to see them here!"
+                                           TextColor="#666"
+                                           FontSize="12"
+                                           HorizontalOptions="Center"
+                                           Margin="0,5,0,0"/>
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:MConversation">
+                                    <Border BackgroundColor="Transparent"
+                                            Padding="0">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Border Grid.Column="0"
+                                                    BackgroundColor="Transparent">
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer 
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ChatViewModel}}, Path=LoadConversationCommand}"
+                                                        CommandParameter="{Binding .}"/>
+                                                </Border.GestureRecognizers>
+
+                                                <VerticalStackLayout Padding="20,12"
+                                                                   Spacing="4">
+                                                    <Label Text="{Binding Title}"
+                                                           TextColor="White"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           LineBreakMode="TailTruncation"/>
+                                                    <Label Text="{Binding CreatedAt, StringFormat='{0:MMM dd, yyyy HH:mm}'}"
+                                                           TextColor="White"
+                                                           Opacity="0.6"
+                                                           FontSize="12"/>
+                                                </VerticalStackLayout>
+                                            </Border>
+                                            
+                                            <!-- Delete Button -->
+                                            <Button Grid.Column="1"
+                                                    Text="???"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#dc3545"
+                                                    FontSize="18"
+                                                    Padding="10"
+                                                    WidthRequest="45"
+                                                    HeightRequest="45"
+                                                    VerticalOptions="Center"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ChatViewModel}}, Path=DeleteConversationCommand}"
+                                                    CommandParameter="{Binding .}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Border>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator Grid.Row="4"
+                                 IsRunning="{Binding IsLoadingConversations}"
+                                 IsVisible="{Binding IsLoadingConversations}"
+                                 Color="White"
+                                 Margin="20"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Chat Area -->
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+            
+            <!-- Custom Header with Gradient -->
+            <Border Grid.Row="0"
+                    BackgroundColor="#667eea"
+                    Padding="20,15">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Button Grid.Column="0"
+                            Text="?"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="5"
+                            BackgroundColor="Transparent"
+                            TextColor="White"
+                            FontSize="20"
+                            Clicked="OnMenuClicked"/>
+                    
+                    <VerticalStackLayout Grid.Column="1"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Center"
+                                       Spacing="2">
+                        <Label Text="RoryGPT"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding ConversationTitle}"
+                               FontSize="12"
+                               TextColor="White"
+                               Opacity="0.9"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <!-- System Prompt Section -->
+            <Border Grid.Row="1"
+                    BackgroundColor="#f8f9fa"
+                    Padding="15">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="System Instructions (Optional):"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="#495057"/>
+                    <Editor Text="{Binding SystemPrompt}"
+                            Placeholder="e.g., You are a helpful coding assistant..."
+                            FontSize="14"
+                            TextColor="#333"
+                            HeightRequest="60"
+                            BackgroundColor="White"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Messages List -->
+            <CollectionView Grid.Row="2"
+                          ItemsSource="{Binding Messages}"
+                          BackgroundColor="#fafbfc"
+                          SelectionMode="None"
+                          x:Name="MessagesCollectionView">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center"
+                                       VerticalOptions="Center"
+                                       Spacing="10">
+                        <Label Text="??"
+                               FontSize="48"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Welcome to RoryGPT!"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="#495057"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Start a conversation by typing a message below"
+                               FontSize="14"
+                               TextColor="#6c757d"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               Margin="40,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="viewmodels:ChatMessageViewModel">
+                        <Grid Padding="15,10"
+                              ColumnDefinitions="Auto,*,Auto">
+                            
+                            <!-- Assistant Avatar (Left) -->
+                            <Border Grid.Column="0"
+                                    IsVisible="{Binding IsUser, Converter={StaticResource InvertedBoolConverter}}"
+                                    WidthRequest="35"
+                                    HeightRequest="35"
+                                    BackgroundColor="#667eea"
+                                    VerticalOptions="Start"
+                                    Margin="0,0,12,0">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="17.5"/>
+                                </Border.StrokeShape>
+                                <Label Text="AI"
+                                       TextColor="White"
+                                       FontAttributes="Bold"
+                                       FontSize="14"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Border>
+
+                            <!-- Message Content -->
+                            <Border Grid.Column="1"
+                                    BackgroundColor="{Binding IsUser, Converter={StaticResource MessageBackgroundConverter}}"
+                                    Padding="15,12"
+                                    HorizontalOptions="{Binding IsUser, Converter={StaticResource MessageAlignmentConverter}}"
+                                    MaximumWidthRequest="300">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18"/>
+                                </Border.StrokeShape>
+
+                                <VerticalStackLayout Spacing="4">
+                                    <!-- Loading Indicator -->
+                                    <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                                     IsVisible="{Binding IsLoading}"
+                                                     Color="#667eea"/>
+
+                                    <!-- Message Text -->
+                                    <Label Text="{Binding Content}"
+                                           IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                                           TextColor="{Binding IsUser, Converter={StaticResource MessageTextColorConverter}}"
+                                           FontSize="15"
+                                           LineBreakMode="WordWrap"/>
+                                    <!-- Timestamp -->
+                                    <Label Text="{Binding FormattedTime}"
+                                           IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"
+                                           TextColor="{Binding IsUser, Converter={StaticResource MessageTextColorConverter}}"
+                                           FontSize="11"
+                                           Opacity="0.7"
+                                           HorizontalOptions="End"
+                                           Margin="0,4,0,0"/>
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <!-- User Avatar (Right) -->
+                            <Border Grid.Column="2"
+                                    IsVisible="{Binding IsUser}"
+                                    WidthRequest="35"
+                                    HeightRequest="35"
+                                    BackgroundColor="#6c757d"
+                                    VerticalOptions="Start"
+                                    Margin="12,0,0,0">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="17.5"/>
+                                </Border.StrokeShape>
+                                <Label Text="R"
+                                       TextColor="White"
+                                       FontAttributes="Bold"
+                                       FontSize="14"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Input Area -->
+            <Border Grid.Row="3"
+                    BackgroundColor="White"
+                    Padding="15">
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="12">
+                    <Border Grid.Column="0"
+                            Stroke="#dee2e6"
+                            StrokeThickness="1"
+                            BackgroundColor="White">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="25"/>
+                        </Border.StrokeShape>
+                        
+                        <Editor Text="{Binding MessageText}"
+                                Placeholder="Type your message here..."
+                                FontSize="16"
+                                TextColor="#333"
+                                MaximumHeightRequest="120"
+                                VerticalOptions="Center"
+                                Margin="16,8"/>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            WidthRequest="50"
+                            HeightRequest="50"
+                            BackgroundColor="#667eea">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="25"/>
+                        </Border.StrokeShape>
+                        
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SendMessageCommand}"/>
+                        </Border.GestureRecognizers>
+
+                        <Label Text="?"
+                               TextColor="White"
+                               FontSize="20"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+
+</ContentPage>

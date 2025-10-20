@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:MauiGPT.ViewModels"
+             x:Class="MauiGPT.Views.LoginPage"
+             x:DataType="viewmodels:LoginViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#667eea">
+
+    <Grid RowDefinitions="*,Auto,*">
+        
+        <!-- Top Section with Greeting -->
+        <VerticalStackLayout Grid.Row="0" 
+                           VerticalOptions="End" 
+                           Padding="40,0,40,40">
+            <Label Text="??" 
+                   FontSize="72"
+                   HorizontalOptions="Center"/>
+            <Label Text="Welcome back, Rory!" 
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,10"/>
+            <Label Text="Your AI Assistant awaits" 
+                   FontSize="16"
+                   TextColor="White"
+                   Opacity="0.9"
+                   HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <!-- Login Box -->
+        <Border Grid.Row="1"
+                BackgroundColor="White"
+                Stroke="Transparent"
+                StrokeThickness="0"
+                Margin="20,0"
+                Padding="30,40">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20"/>
+            </Border.StrokeShape>
+            
+            <Border.Shadow>
+                <Shadow Brush="Black"
+                        Offset="0,10"
+                        Radius="30"
+                        Opacity="0.3"/>
+            </Border.Shadow>
+
+            <VerticalStackLayout Spacing="20">
+                <Label Text="?? Enter Access Key" 
+                       FontSize="24"
+                       FontAttributes="Bold"
+                       TextColor="#333"
+                       HorizontalOptions="Center"/>
+
+                <Label Text="Enter your API key to continue" 
+                       FontSize="14"
+                       TextColor="#666"
+                       HorizontalOptions="Center"/>
+
+                <!-- API Key Entry -->
+                <Border BackgroundColor="Transparent"
+                        Stroke="#dee2e6"
+                        StrokeThickness="2"
+                        Padding="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+                    
+                    <Entry Text="{Binding ApiKey}"
+                           Placeholder="Your API Key"
+                           IsPassword="True"
+                           FontSize="16"
+                           TextColor="#333"
+                           PlaceholderColor="#999"
+                           HeightRequest="50"/>
+                </Border>
+
+                <!-- Error Message -->
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyConverter}}"
+                       TextColor="#dc3545"
+                       FontSize="14"
+                       HorizontalOptions="Center"/>
+
+                <!-- Login Button -->
+                <Button Text="Unlock Access"
+                        Command="{Binding LoginCommand}"
+                        BackgroundColor="#667eea"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="25"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"/>
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                 IsVisible="{Binding IsLoading}"
+                                 Color="#667eea"
+                                 HeightRequest="30"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Bottom Branding -->
+        <VerticalStackLayout Grid.Row="2" 
+                           VerticalOptions="End"
+                           Padding="40">
+            <Label Text="RoryGPT" 
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   Opacity="0.8"
+                   HorizontalOptions="Center"/>
+            <Label Text="Your Personal AI Assistant" 
+                   FontSize="14"
+                   TextColor="White"
+                   Opacity="0.6"
+                   HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>

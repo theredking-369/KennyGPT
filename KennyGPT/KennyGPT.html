@@ -789,20 +789,17 @@
     <script>
         // Configuration - UPDATE THESE AFTER DEPLOYMENT
         const CONFIG = {
-            // Change this to your Azure App Service URL after deployment
             API_BASE_URL: window.location.hostname === 'localhost'
                 ? 'https://localhost:7066/api'
-                : 'https://kennygpt-api.azurewebsites.net/api',
+                : 'https://kennygpt.azurewebsites.net/api',
 
-            // For testing, you can hardcode API key check on client (NOT RECOMMENDED for production)
-            // Better: Implement ApiKeyMiddleware in your backend
             REQUIRE_AUTH: true
         };
 
         // Global variables
         let currentConversationId = null;
         let isLoading = false;
-        let conversations = [];
+        let conversations = [];  // Now loaded from server, not localStorage
         let apiKey = null;
         let isAuthenticated = false;
 
@@ -824,15 +821,16 @@
             if (!CONFIG.REQUIRE_AUTH) {
                 loginModal.classList.add('hidden');
                 isAuthenticated = true;
+                loadConversationsFromServer();  // ✅ Load from server
                 return;
             }
 
-            // Check if API key exists in sessionStorage
             const savedApiKey = sessionStorage.getItem('kennygpt_api_key');
             if (savedApiKey) {
                 apiKey = savedApiKey;
                 loginModal.classList.add('hidden');
                 isAuthenticated = true;
+                loadConversationsFromServer();  // ✅ Load from server after auth
             } else {
                 loginModal.classList.remove('hidden');
                 apiKeyInput.focus();
@@ -850,21 +848,20 @@
             loginError.classList.remove('show');
 
             try {
-                // Test the API key by making a test request
                 const response = await fetch(`${CONFIG.API_BASE_URL}/chat/test`, {
                     method: 'GET',
-                    headers: {
-                        'X-API-Key': inputKey
-                    }
+                    headers: { 'X-API-Key': inputKey }
                 });
 
                 if (response.ok) {
-                    // API key is valid
                     apiKey = inputKey;
                     sessionStorage.setItem('kennygpt_api_key', inputKey);
                     isAuthenticated = true;
                     loginModal.classList.add('hidden');
                     apiKeyInput.value = '';
+
+                    // ✅ Load conversations after successful authentication
+                    await loadConversationsFromServer();
                 } else {
                     showLoginError('Invalid API key');
                 }
@@ -884,34 +881,26 @@
                 sessionStorage.removeItem('kennygpt_api_key');
                 apiKey = null;
                 isAuthenticated = false;
+                conversations = [];
+                currentConversationId = null;
                 loginModal.classList.remove('hidden');
                 apiKeyInput.value = '';
                 apiKeyInput.focus();
+                showEmptyState();
+                renderConversationsList();
             }
         }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
-            // Check authentication first
             checkAuthentication();
 
-            // Load theme preference
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('themeToggle').innerHTML = '<span class="theme-icon">☀️</span>';
             }
 
-            // Load conversations from localStorage
-            loadConversationsFromStorage();
-
-            // Load last active conversation
-            const lastConversationId = localStorage.getItem('lastConversationId');
-            if (lastConversationId && conversations.find(c => c.id === lastConversationId)) {
-                loadConversation(lastConversationId);
-            }
-
-            // Enter key to authenticate
             apiKeyInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     authenticate();
@@ -924,12 +913,10 @@
                     sendMessage();
                 }
 
-                // Auto-resize textarea
                 this.style.height = 'auto';
                 this.style.height = this.scrollHeight + 'px';
             });
 
-            // Auto-resize system prompt textarea
             systemPromptInput.addEventListener('input', function () {
                 this.style.height = 'auto';
                 this.style.height = this.scrollHeight + 'px';
@@ -938,101 +925,80 @@
             messageInput.focus();
         });
 
-        // Local Storage Functions
-        function saveConversationsToStorage() {
-            localStorage.setItem('conversations', JSON.stringify(conversations));
-        }
+        // ✅ NEW: Server-Side Conversation Functions
+        async function loadConversationsFromServer() {
+            if (!isAuthenticated) return;
 
-        function loadConversationsFromStorage() {
-            const stored = localStorage.getItem('conversations');
-            if (stored) {
-                conversations = JSON.parse(stored);
-                renderConversationsList();
-            }
-        }
-
-        function saveCurrentConversation() {
-            if (currentConversationId) {
-                localStorage.setItem('lastConversationId', currentConversationId);
-            }
-        }
-
-        // Conversation Management
-        function createNewConversation(firstMessage) {
-            const conversation = {
-                id: generateId(),
-                title: firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : ''),
-                createdAt: new Date().toISOString(),
-                messages: []
-            };
-
-            conversations.unshift(conversation);
-            saveConversationsToStorage();
-            renderConversationsList();
-            return conversation;
-        }
-
-        function updateConversationTitle(conversationId, title) {
-            const conversation = conversations.find(c => c.id === conversationId);
-            if (conversation && !conversation.title.includes('...')) {
-                conversation.title = title.substring(0, 50) + (title.length > 50 ? '...' : '');
-                saveConversationsToStorage();
-                renderConversationsList();
-            }
-        }
-
-        function addMessageToConversation(conversationId, message, isUser) {
-            const conversation = conversations.find(c => c.id === conversationId);
-            if (conversation) {
-                conversation.messages.push({
-                    id: generateId(),
-                    content: message,
-                    isUser: isUser,
-                    timestamp: new Date().toISOString()
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/conversations`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    }
                 });
-                saveConversationsToStorage();
-            }
-        }
 
-        function loadConversation(conversationId) {
-            const conversation = conversations.find(c => c.id === conversationId);
-            if (!conversation) return;
+                if (response.ok) {
+                    conversations = await response.json();
+                    renderConversationsList();
 
-            currentConversationId = conversationId;
-            saveCurrentConversation();
-
-            // Clear chat and load messages
-            chatMessages.innerHTML = '';
-
-            conversation.messages.forEach(msg => {
-                addMessageToDOM(msg.content, msg.isUser);
-            });
-
-            if (conversation.messages.length === 0) {
-                showEmptyState();
-            }
-
-            // Update UI
-            conversationTitle.textContent = conversation.title;
-            updateActiveConversation();
-
-            // Close mobile sidebar
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
-            }
-        }
-
-        function deleteConversation(conversationId, event) {
-            event.stopPropagation();
-
-            if (confirm('Are you sure you want to delete this conversation?')) {
-                conversations = conversations.filter(c => c.id !== conversationId);
-                saveConversationsToStorage();
-                renderConversationsList();
-
-                if (currentConversationId === conversationId) {
-                    startNewConversation();
+                    // Load last conversation if exists
+                    if (conversations.length > 0) {
+                        await loadConversation(conversations[0].id);
+                    }
+                } else if (response.status === 401) {
+                    logout();
                 }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        async function loadConversation(conversationId) {
+            if (!isAuthenticated) return;
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.API_BASE_URL}/chat/conversations/${conversationId}/messages`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': apiKey
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    const messages = await response.json();
+
+                    currentConversationId = conversationId;
+                    chatMessages.innerHTML = '';
+
+                    messages.forEach(msg => {
+                        addMessageToDOM(msg.content, msg.role === 'user');
+                    });
+
+                    if (messages.length === 0) {
+                        showEmptyState();
+                    }
+
+                    // Update UI
+                    const conversation = conversations.find(c => c.id === conversationId);
+                    if (conversation) {
+                        conversationTitle.textContent = conversation.title;
+                    }
+
+                    updateActiveConversation();
+
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                } else if (response.status === 401) {
+                    logout();
+                }
+            } catch (error) {
+                console.error('Error loading conversation:', error);
             }
         }
 
@@ -1041,10 +1007,10 @@
 
             if (conversations.length === 0) {
                 conversationsList.innerHTML = `
-                        <div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                            No conversations yet.<br>Start chatting to see them here!
-                        </div>
-                    `;
+                    <div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                        No conversations yet.<br>Start chatting to see them here!
+                    </div>
+                `;
                 return;
             }
 
@@ -1054,13 +1020,13 @@
                 item.onclick = () => loadConversation(conversation.id);
 
                 const date = new Date(conversation.createdAt);
-                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const formattedDate = date.toLocaleDateString() + ' ' +
+                    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 item.innerHTML = `
-                        <div class="conversation-title">${conversation.title}</div>
-                        <div class="conversation-date">${formattedDate}</div>
-                        <button class="conversation-delete" onclick="deleteConversation('${conversation.id}', event)">×</button>
-                    `;
+                    <div class="conversation-title">${conversation.title}</div>
+                    <div class="conversation-date">${formattedDate}</div>
+                `;
 
                 conversationsList.appendChild(item);
             });
@@ -1070,9 +1036,7 @@
 
         function updateActiveConversation() {
             const items = conversationsList.querySelectorAll('.conversation-item');
-            items.forEach(item => {
-                item.classList.remove('active');
-            });
+            items.forEach(item => item.classList.remove('active'));
 
             if (currentConversationId) {
                 const activeIndex = conversations.findIndex(c => c.id === currentConversationId);
@@ -1085,16 +1049,15 @@
         // UI Functions
         function showEmptyState() {
             chatMessages.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">💬</div>
-                        <h3>Welcome to KennyGPT!</h3>
-                        <p>Start a conversation by typing a message below.</p>
-                    </div>
-                `;
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <h3>Welcome to KennyGPT!</h3>
+                    <p>Start a conversation by typing a message below.</p>
+                </div>
+            `;
         }
 
         function addMessageToDOM(content, isUser = false, isLoading = false) {
-            // Remove empty state if it exists
             const emptyState = chatMessages.querySelector('.empty-state');
             if (emptyState) {
                 emptyState.remove();
@@ -1170,17 +1133,8 @@
 
             const systemPrompt = systemPromptInput.value.trim();
 
-            // Create new conversation if needed
-            if (!currentConversationId) {
-                const newConversation = createNewConversation(message);
-                currentConversationId = newConversation.id;
-                conversationTitle.textContent = newConversation.title;
-                saveCurrentConversation();
-            }
-
-            // Add user message to DOM and storage
+            // Add user message to DOM
             addMessageToDOM(message, true);
-            addMessageToConversation(currentConversationId, message, true);
 
             // Clear input and add loading message
             messageInput.value = '';
@@ -1201,7 +1155,6 @@
                     'Content-Type': 'application/json'
                 };
 
-                // Add API key to headers if authentication is required
                 if (CONFIG.REQUIRE_AUTH && apiKey) {
                     headers['X-API-Key'] = apiKey;
                 }
@@ -1213,7 +1166,6 @@
                 });
 
                 if (response.status === 401) {
-                    // Unauthorized - logout and show login
                     logout();
                     throw new Error('Session expired. Please login again.');
                 }
@@ -1224,17 +1176,21 @@
 
                 const data = await response.json();
 
+                // ✅ Update conversation ID from server response
+                currentConversationId = data.conversationId;
+
                 // Replace loading message with actual response
                 loadingContentDiv.innerHTML = '';
                 loadingContentDiv.textContent = data.response;
 
-                // Add AI response to storage
-                addMessageToConversation(currentConversationId, data.response, false);
+                // ✅ Reload conversations from server to get updated list
+                await loadConversationsFromServer();
 
-                // Update conversation title if it's the first exchange
+                // Update active conversation in UI
+                updateActiveConversation();
+
                 const conversation = conversations.find(c => c.id === currentConversationId);
-                if (conversation && conversation.messages.length === 2) {
-                    updateConversationTitle(currentConversationId, message);
+                if (conversation) {
                     conversationTitle.textContent = conversation.title;
                 }
 
@@ -1252,12 +1208,10 @@
         function startNewConversation() {
             currentConversationId = null;
             conversationTitle.textContent = 'New Conversation';
-            localStorage.removeItem('lastConversationId');
             showEmptyState();
             updateActiveConversation();
             messageInput.focus();
 
-            // Close mobile sidebar
             if (window.innerWidth <= 768) {
                 toggleSidebar();
             }
@@ -1268,12 +1222,10 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
 
-        // Handle connection errors gracefully
         window.addEventListener('unhandledrejection', function (event) {
             console.error('Unhandled promise rejection:', event.reason);
         });
 
-        // Handle window resize
         window.addEventListener('resize', function () {
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('open');

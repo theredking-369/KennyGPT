@@ -229,3 +229,45 @@ Artifacts/
 **/packages/*
 # except build/, which is used as an MSBuild target.
 !**/packages/build/
+
+###################
+## SECURITY - NEVER COMMIT SECRETS!
+###################
+
+# User Secrets (stored outside repository)
+**/secrets.json
+**/*secrets.json
+UserSecrets/
+
+# Development appsettings with secrets
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Azure Functions local settings
+local.settings.json
+
+###################
+## .NET 9 / MAUI Specific
+###################
+
+# MAUI binlogs
+*.binlog
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets

@@ -21,6 +21,7 @@ namespace KennyGPT.Controllers
             _dbContext = dbContext;
         }
 
+
         [HttpPost("send")]
         public async Task<ActionResult<MChatResponse>> SendMessage([FromBody] MChatRequest request)
         {
@@ -28,6 +29,7 @@ namespace KennyGPT.Controllers
             {
                 // Get or create conversation
                 var conversation = await GetOrCreateConversation(request.ConversationId);
+                bool isFirstMessage = conversation.Messages.Count == 0;
 
                 // Add user message to conversation
                 var userMessage = new MChatMessage
@@ -63,6 +65,12 @@ namespace KennyGPT.Controllers
 
                 await _dbContext.SaveChangesAsync();
 
+                // ✅ Update conversation title after first message
+                if (isFirstMessage)
+                {
+                    await UpdateConversationTitle(conversation.Id, request.Message);
+                }
+
                 return Ok(new MChatResponse
                 {
                     Response = aiResponse,
@@ -75,7 +83,6 @@ namespace KennyGPT.Controllers
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
-
 
         [HttpGet("conversations")]
         public async Task<ActionResult<List<MConversation>>> GetConversations()
@@ -119,6 +126,36 @@ namespace KennyGPT.Controllers
             return Ok(new { message = "API is working!", timestamp = DateTime.UtcNow });
         }
 
+        [HttpDelete("conversations/{conversationId}")]
+        public async Task<IActionResult> DeleteConversation(string conversationId)
+        {
+            try
+            {
+                var conversation = await _dbContext.Conversations
+                    .Include(c => c.Messages)
+                    .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+                if (conversation == null)
+                {
+                    return NotFound(new { message = "Conversation not found" });
+                }
+
+                // Delete all messages in the conversation
+                _dbContext.ChatMessages.RemoveRange(conversation.Messages);
+
+                // Delete the conversation
+                _dbContext.Conversations.Remove(conversation);
+
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Conversation deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error deleting conversation: {ex.Message}");
+            }
+        }
+
         private async Task<MConversation> GetOrCreateConversation(string? conversationId)
         {
             if (!string.IsNullOrEmpty(conversationId))
@@ -134,13 +171,26 @@ namespace KennyGPT.Controllers
             var newConversation = new MConversation
             {
                 Id = Guid.NewGuid().ToString(),
-                UserId = "anonymous", // Replace with actual user ID from authentication ... PS I don't think this is important when this model is private ... I am still learning though
-                Title = "New Conversation",
+                UserId = "anonymous",
+                Title = "New Conversation",  // Will be updated after first message
                 CreatedAt = DateTime.UtcNow
             };
 
             _dbContext.Conversations.Add(newConversation);
             return newConversation;
+        }
+
+        // ✅ Add this new method to update conversation title
+        private async Task UpdateConversationTitle(string conversationId, string firstMessage)
+        {
+            var conversation = await _dbContext.Conversations.FindAsync(conversationId);
+            if (conversation != null && conversation.Title == "New Conversation")
+            {
+                conversation.Title = firstMessage.Length > 50
+                    ? firstMessage.Substring(0, 50) + "..."
+                    : firstMessage;
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }

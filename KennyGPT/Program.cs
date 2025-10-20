@@ -14,7 +14,6 @@ namespace KennyGPT
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -25,18 +24,21 @@ namespace KennyGPT
             builder.Services.AddScoped<IAzureService, AzureService>();
             builder.Services.AddHttpClient<ISerpAPIService, SerpAPIService>();
 
-            // UPDATED: Restrict CORS to your frontend domain only
+            // ? FIXED: Proper CORS configuration
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowFrontend", builder =>
+                options.AddPolicy("AllowFrontend", policy =>
                 {
-                    builder.WithOrigins(
-                        "https://theredking-369.github.io",  // Your GitHub Pages
-                        "http://localhost:7066",              // For local testing
-                        "http://127.0.0.1:7066"               // For local testing
+                    policy.WithOrigins(
+                        "https://gray-ocean-0040c6203.2.azurestaticapps.net",  // ? Your Static Web App
+                        "http://localhost:7066",              // Local HTTP
+                        "https://localhost:7066",             // Local HTTPS
+                        "http://127.0.0.1:7066",              // Local IP HTTP
+                        "https://127.0.0.1:7066"              // Local IP HTTPS
                     )
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials();  // ? CRITICAL: Required for API key headers
                 });
             });
 
@@ -61,11 +63,11 @@ namespace KennyGPT
                 }
             }
 
-            // ADD API KEY AUTHENTICATION MIDDLEWARE
-            app.UseMiddleware<ApiKeyMiddleware>();
-
-            // Enable CORS with restricted policy
+            // ? CRITICAL FIX: CORS MUST BE BEFORE ApiKeyMiddleware!
             app.UseCors("AllowFrontend");
+
+            // ADD API KEY AUTHENTICATION MIDDLEWARE (after CORS!)
+            app.UseMiddleware<ApiKeyMiddleware>();
 
             // DISABLE Swagger in Production
             if (app.Environment.IsDevelopment())
