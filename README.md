@@ -6,13 +6,17 @@
 [![MAUI](https://img.shields.io/badge/MAUI-Cross--Platform-512BD4)](https://dotnet.microsoft.com/apps/maui)
 [![Azure](https://img.shields.io/badge/Azure-Cloud%20Hosted-0078D4?logo=microsoft-azure)](https://azure.microsoft.com/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991?logo=openai)](https://openai.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 
 **A production-ready AI chatbot featuring ASP.NET Core backend, Azure Static Web App frontend, and cross-platform .NET MAUI mobile app**
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Deployment](#-deployment)
 
-![KennyGPT Banner](https://via.placeholder.com/800x200/667eea/ffffff?text=KennyGPT+-+AI+Chat+Application)
+<!-- Option 1: Animated typing banner (works immediately) -->
+![KennyGPT Banner](https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=30&duration=3000&pause=1000&color=667EEA&center=true&vCenter=true&width=800&height=100&lines=🤖+KennyGPT+-+AI+Chat+Application;Built+with+.NET+9+%26+Azure;Cross-Platform+•+Mobile+•+Web+•+API)
+
+<!-- Option 2: Static gradient banner (uncomment when you create custom banner) -->
+<!-- ![KennyGPT Banner](assets/banner.png) -->
 
 </div>
 
@@ -282,9 +286,6 @@ dotnet run
   },
   "ConnectionStrings": {
     "DefaultConnection": "Server=tcp:yourserver.database.windows.net,1433;..."
-  },
-  "SerpApi": {
-    "ApiKey": "your-serpapi-key-here"
   }
 }
 ```
@@ -469,7 +470,7 @@ git log -p | grep -i "connectionstring"
 
 ## 📚 Documentation
 
-- 📖 **[Deployment Guide](MauiGPT/DEPLOYMENT_GUIDE.md)** - Detailed deployment steps
+- 📖 **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment walkthrough
 - 🆕 **[New Features](MauiGPT/NEW_FEATURES.md)** - Timestamps, delete, dark mode
 - 🔧 **[Delete Troubleshooting](MauiGPT/DELETE_TROUBLESHOOTING.md)** - Debug delete issues
 - 🚀 **[Quick Guide](MauiGPT/QUICK_GUIDE.md)** - Quick reference
@@ -528,7 +529,7 @@ dotnet user-secrets list
 
 </details>
 
-See detailed troubleshooting: [`DEPLOYMENT_GUIDE.md`](MauiGPT/DEPLOYMENT_GUIDE.md)
+See detailed troubleshooting: [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)
 
 ---
 
