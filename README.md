@@ -1,4 +1,4 @@
-# ?? KennyGPT - Full-Stack AI Chat Application
+﻿# 🤖 KennyGPT - Full-Stack AI Chat Application
 
 <div align="center">
 
@@ -10,7 +10,7 @@
 
 **A production-ready AI chatbot featuring ASP.NET Core backend, Azure Static Web App frontend, and cross-platform .NET MAUI mobile app**
 
-[Features](#-features) � [Quick Start](#-quick-start) � [Architecture](#-architecture) � [Documentation](#-documentation) � [Deployment](#-deployment)
+[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Deployment](#-deployment)
 
 ![KennyGPT Banner](https://via.placeholder.com/800x200/667eea/ffffff?text=KennyGPT+-+AI+Chat+Application)
 
@@ -18,79 +18,79 @@
 
 ---
 
-## ?? Overview
+## 🌟 Overview
 
 **KennyGPT** is a complete full-stack AI chat application showcasing modern .NET development practices:
 
-- ?? **Backend API**: ASP.NET Core 9.0 with Entity Framework Core
-- ?? **Web Frontend**: Vanilla JavaScript SPA on Azure Static Web Apps  
-- ?? **Mobile App**: .NET MAUI for Android, iOS, Windows, and macOS
-- ?? **AI Integration**: Azure OpenAI (GPT-4o) with web search via SerpAPI
-- ?? **Database**: Azure SQL Database for conversation persistence
-- ?? **Security**: API key authentication and secure credential storage
+- 🚀 **Backend API**: ASP.NET Core 9.0 with Entity Framework Core
+- 🌐 **Web Frontend**: Vanilla JavaScript SPA on Azure Static Web Apps  
+- 📱 **Mobile App**: .NET MAUI for Android, iOS, Windows, and macOS
+- 🤖 **AI Integration**: Azure OpenAI (GPT-4o) with web search via SerpAPI
+- 💾 **Database**: Azure SQL Database for conversation persistence
+- 🔐 **Security**: API key authentication and secure credential storage
 
 Perfect for learning full-stack .NET development, AI integration, or as a foundation for your own AI-powered applications!
 
 ---
 
-## ? Features
+## ✨ Features
 
-### ?? Core Features
-- ? **Real-time AI Chat** - Powered by Azure OpenAI (GPT-4o)
-- ? **Web Search Integration** - Current information via SerpAPI
-- ? **Conversation Management** - Persistent cloud storage
-- ? **Multi-Platform Support** - Web, Android, iOS, Windows, macOS
-- ? **API Key Authentication** - Secure access control
-- ? **Custom System Prompts** - Personalize AI behavior
+### 🎯 Core Features
+- ✅ **Real-time AI Chat** - Powered by Azure OpenAI (GPT-4o)
+- ✅ **Web Search Integration** - Current information via SerpAPI
+- ✅ **Conversation Management** - Persistent cloud storage
+- ✅ **Multi-Platform Support** - Web, Android, iOS, Windows, macOS
+- ✅ **API Key Authentication** - Secure access control
+- ✅ **Custom System Prompts** - Personalize AI behavior
 
-### ?? Mobile App Features  
-- ? **Message Timestamps** - Track conversation timeline
-- ??? **Delete Conversations** - With confirmation dialogs
-- ?? **Dark Mode** - System-wide theme with persistence
-- ?? **ChatGPT-style UI** - Modern message bubbles
-- ?? **Secure Storage** - Encrypted API key storage
-- ?? **Conversation History** - Cloud sync
-- ? **Smooth Animations** - Polished UX
+### 📱 Mobile App Features  
+- ⏰ **Message Timestamps** - Track conversation timeline
+- 🗑️ **Delete Conversations** - With confirmation dialogs
+- 🌓 **Dark Mode** - System-wide theme with persistence
+- 💬 **ChatGPT-style UI** - Modern message bubbles
+- 🔐 **Secure Storage** - Encrypted API key storage
+- 📂 **Conversation History** - Cloud sync
+- ✨ **Smooth Animations** - Polished UX
 
-### ?? Web App Features
-- ?? **Modern Gradient UI** - Responsive design
-- ?? **System Instructions** - Customize AI responses
-- ?? **Real-time Updates** - Instant conversation switching
-- ?? **Local Storage** - Remember preferences
+### 🌐 Web App Features
+- 🎨 **Modern Gradient UI** - Responsive design
+- 📝 **System Instructions** - Customize AI responses
+- 🔄 **Real-time Updates** - Instant conversation switching
+- 💾 **Local Storage** - Remember preferences
 
 ---
 
-## ??? Architecture
+## 🏗️ Architecture
 
 ```
-???????????????????????????????????????????????????????
-?                  Client Layer                       ?
-?  ????????????????????      ????????????????????   ?
-?  ?   Web App (SPA)  ?      ?  Mobile App MAUI ?   ?
-?  ?  Azure Static    ?      ?  Android/iOS/    ?   ?
-?  ?   Web Apps       ?      ?  Windows/macOS   ?   ?
-?  ????????????????????      ????????????????????   ?
-??????????????????????????????????????????????????????
-            ?                        ?
-            ?   HTTPS + API Key Auth ?
-            ??????????????????????????
-                     ?
-         ?????????????????????????
-         ?   ASP.NET Core API    ?
-         ?   Azure App Service   ?
-         ?  ???????????????????  ?
-         ?  ? ApiKey          ?  ?
-         ?  ? Middleware      ?  ?
-         ?  ???????????????????  ?
-         ?????????????????????????
-                     ?
-      ?????????????????????????????
-      ?              ?              ?
-?????????????  ????????????  ????????????
-?  Azure    ?  ?  Azure   ?  ? SerpAPI  ?
-?  OpenAI   ?  ?   SQL    ?  ?  Search  ?
-?  GPT-4o   ?  ? Database ?  ?  Engine  ?
-?????????????  ????????????  ????????????
+┌─────────────────────────────────────────────────────┐
+│                  Client Layer                       │
+│  ┌──────────────────┐      ┌──────────────────┐   │
+│  │   Web App (SPA)  │      │  Mobile App MAUI │   │
+│  │  Azure Static    │      │  Android/iOS/    │   │
+│  │   Web Apps       │      │  Windows/macOS   │   │
+│  └────────┬─────────┘      └────────┬─────────┘   │
+└───────────┼────────────────────────┼───────────────┘
+            │                        │
+            │   HTTPS + API Key Auth │
+            └────────┬───────────────┘
+                     ↓
+         ┌───────────────────────┐
+         │   ASP.NET Core API    │
+         │   Azure App Service   │
+         │  ┌─────────────────┐  │
+         │  │ ApiKey          │  │
+         │  │ Middleware      │  │
+         │  └─────────────────┘  │
+         └───────────┬───────────┘
+                     │
+      ┏━━━━━━━━━━━━━┻━━━━━━━━━━━━━┓
+      ↓              ↓              ↓
+┌───────────┐  ┌──────────┐  ┌──────────┐
+│  Azure    │  │  Azure   │  │ SerpAPI  │
+│  OpenAI   │  │   SQL    │  │  Search  │
+│  GPT-4o   │  │ Database │  │  Engine  │
+└───────────┘  └──────────┘  └──────────┘
 ```
 
 ### Data Flow
@@ -104,32 +104,32 @@ Perfect for learning full-stack .NET development, AI integration, or as a founda
 
 ---
 
-## ?? Projects
+## 📁 Projects
 
-### 1?? **KennyGPT** - Backend API
-**?? Directory**: `KennyGPT/`  
+### 1️⃣ **KennyGPT** - Backend API
+**📍 Directory**: `KennyGPT/`  
 **Tech**: ASP.NET Core 9.0, EF Core, Azure OpenAI SDK
 
 ```
 KennyGPT/
-??? Controllers/
-?   ??? ChatController.cs         # REST API endpoints
-??? Services/
-?   ??? AzureService.cs           # OpenAI integration
-?   ??? SerpAPIService.cs         # Web search
-??? Middleware/
-?   ??? ApiKeyMiddleware.cs       # Authentication
-??? Data/
-?   ??? ChatDbContext.cs          # EF Core DbContext
-??? Models/
-?   ??? MConversation.cs
-?   ??? MChatMessage.cs
-?   ??? MChatRequest.cs (DTO)
-?   ??? MChatResponse.cs (DTO)
-??? Migrations/                   # Database migrations
+├── Controllers/
+│   └── ChatController.cs         # REST API endpoints
+├── Services/
+│   ├── AzureService.cs           # OpenAI integration
+│   └── SerpAPIService.cs         # Web search
+├── Middleware/
+│   └── ApiKeyMiddleware.cs       # Authentication
+├── Data/
+│   └── ChatDbContext.cs          # EF Core DbContext
+├── Models/
+│   ├── MConversation.cs
+│   ├── MChatMessage.cs
+│   ├── MChatRequest.cs (DTO)
+│   └── MChatResponse.cs (DTO)
+└── Migrations/                   # Database migrations
 ```
 
-**?? API Endpoints:**
+**📡 API Endpoints:**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -139,53 +139,53 @@ KennyGPT/
 | `DELETE` | `/api/chat/conversations/{id}` | Delete conversation |
 | `GET` | `/api/chat/test` | Health check |
 
-### 2?? **MauiGPT** - Mobile App  
-**?? Directory**: `MauiGPT/`  
+### 2️⃣ **MauiGPT** - Mobile App  
+**📍 Directory**: `MauiGPT/`  
 **Tech**: .NET MAUI 9.0, MVVM Pattern
 
 ```
 MauiGPT/
-??? Views/
-?   ??? LoginPage.xaml            # Login UI
-?   ??? ChatPage.xaml             # Chat interface
-??? ViewModels/
-?   ??? LoginViewModel.cs         # Login logic
-?   ??? ChatViewModel.cs          # Chat logic
-?   ??? ViewModelBase.cs          # Base MVVM
-??? Services/
-?   ??? AzureService.cs           # API client
-?   ??? ThemeService.cs           # Dark mode
-??? Models/                       # Shared DTOs
-??? Converters/                   # XAML value converters
-??? Helpers/
-?   ??? ConnectivityHelper.cs
-?   ??? AppLogger.cs
-??? Resources/                    # Assets, fonts, styles
+├── Views/
+│   ├── LoginPage.xaml            # Login UI
+│   └── ChatPage.xaml             # Chat interface
+├── ViewModels/
+│   ├── LoginViewModel.cs         # Login logic
+│   ├── ChatViewModel.cs          # Chat logic
+│   └── ViewModelBase.cs          # Base MVVM
+├── Services/
+│   ├── AzureService.cs           # API client
+│   └── ThemeService.cs           # Dark mode
+├── Models/                       # Shared DTOs
+├── Converters/                   # XAML value converters
+├── Helpers/
+│   ├── ConnectivityHelper.cs
+│   └── AppLogger.cs
+└── Resources/                    # Assets, fonts, styles
 ```
 
-**?? Supported Platforms:**
-- ? **Android** (API 21+)
-- ? **iOS** (15.0+)
-- ? **Windows** (10.0.17763+)
-- ? **macOS** (Catalyst 15.0+)
+**🎯 Supported Platforms:**
+- ✅ **Android** (API 21+)
+- ✅ **iOS** (15.0+)
+- ✅ **Windows** (10.0.17763+)
+- ✅ **macOS** (Catalyst 15.0+)
 
-### 3?? **Web Frontend**  
-**?? Hosting**: Azure Static Web Apps  
+### 3️⃣ **Web Frontend**  
+**📍 Hosting**: Azure Static Web Apps  
 **Tech**: Vanilla JavaScript, HTML5, CSS3
 
-?? **Live Demo**: [gray-ocean-0040c6203.2.azurestaticapps.net](https://gray-ocean-0040c6203.2.azurestaticapps.net)
+🌐 **Live Demo**: [gray-ocean-0040c6203.2.azurestaticapps.net](https://gray-ocean-0040c6203.2.azurestaticapps.net)
 
 ---
 
-## ?? Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
-- ? [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- ? [Visual Studio 2022](https://visualstudio.microsoft.com/) (17.8+)  
+- ✅ [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- ✅ [Visual Studio 2022](https://visualstudio.microsoft.com/) (17.8+)  
   *With MAUI workload for mobile development*
-- ? [Azure Account](https://azure.microsoft.com/free/) (free tier available)
-- ? Azure OpenAI Service access
-- ? (Optional) [SerpAPI Key](https://serpapi.com/)
+- ✅ [Azure Account](https://azure.microsoft.com/free/) (free tier available)
+- ✅ Azure OpenAI Service access
+- ✅ (Optional) [SerpAPI Key](https://serpapi.com/)
 
 ### 1. Clone Repository
 ```bash
@@ -247,15 +247,15 @@ dotnet run
 2. You'll see the **login screen**
 3. Enter your **API key** (create one if needed)
 4. Tap **"Unlock Access"**
-5. Start chatting! ??
+5. Start chatting! 🎉
 
 ---
 
-## ?? Configuration
+## ⚙️ Configuration
 
 ### Backend Configuration
 
-**?? `appsettings.json`** (empty placeholders - safe to commit):
+**📄 `appsettings.json`** (empty placeholders - safe to commit):
 ```json
 {
   "AzureOpenAI": {
@@ -272,7 +272,7 @@ dotnet run
 }
 ```
 
-**?? User Secrets** (stored locally, NOT in repo):
+**🔐 User Secrets** (stored locally, NOT in repo):
 ```json
 {
   "AzureOpenAI": {
@@ -315,13 +315,13 @@ curl -X POST "https://kennygpt.azurewebsites.net/api/chat/send" \
 
 ---
 
-## ?? Deployment
+## 🌐 Deployment
 
 ### Deploy Backend to Azure App Service
 
 #### Option 1: Visual Studio
-1. Right-click `KennyGPT` project ? **Publish**
-2. Choose **Azure ? Azure App Service (Windows)**
+1. Right-click `KennyGPT` project → **Publish**
+2. Choose **Azure → Azure App Service (Windows)**
 3. Sign in to Azure
 4. Create/select App Service
 5. Click **Publish**
@@ -384,7 +384,7 @@ dotnet publish MauiGPT/MauiGPT.csproj -c Release -f net9.0-windows10.0.19041.0 -
 
 ---
 
-## ??? Technologies
+## 🛠️ Technologies
 
 <table>
 <tr>
@@ -426,9 +426,9 @@ dotnet publish MauiGPT/MauiGPT.csproj -c Release -f net9.0-windows10.0.19041.0 -
 
 ---
 
-## ?? Security
+## 🔐 Security
 
-### ? Security Best Practices
+### ✅ Security Best Practices
 
 1. **User Secrets** - Development credentials stored locally, never committed
 2. **API Key Auth** - Middleware validates all requests
@@ -437,21 +437,21 @@ dotnet publish MauiGPT/MauiGPT.csproj -c Release -f net9.0-windows10.0.19041.0 -
 5. **SecureStorage** - Mobile credentials encrypted on device
 6. **Input Validation** - Sanitization of user inputs
 
-### ?? What's Safe to Commit
-- ? Source code
-- ? `appsettings.json` (with empty values)
-- ? Database migrations
-- ? Documentation
-- ? `.csproj` files
+### 🔒 What's Safe to Commit
+- ✅ Source code
+- ✅ `appsettings.json` (with empty values)
+- ✅ Database migrations
+- ✅ Documentation
+- ✅ `.csproj` files
 
-### ?? NEVER Commit
-- ? API keys or secrets
-- ? Connection strings
-- ? `secrets.json` files
-- ? `appsettings.Development.json`
-- ? `.user` files
+### ⚠️ NEVER Commit
+- ❌ API keys or secrets
+- ❌ Connection strings
+- ❌ `secrets.json` files
+- ❌ `appsettings.Development.json`
+- ❌ `.user` files
 
-### ??? Before Making Repository Public
+### 🛡️ Before Making Repository Public
 
 **Already protected!** Your `.gitignore` has been updated to exclude:
 - User secrets directories
@@ -467,18 +467,18 @@ git log -p | grep -i "connectionstring"
 
 ---
 
-## ?? Documentation
+## 📚 Documentation
 
-- ?? **[Deployment Guide](MauiGPT/DEPLOYMENT_GUIDE.md)** - Detailed deployment steps
-- ?? **[New Features](MauiGPT/NEW_FEATURES.md)** - Timestamps, delete, dark mode
-- ?? **[Delete Troubleshooting](MauiGPT/DELETE_TROUBLESHOOTING.md)** - Debug delete issues
-- ?? **[Quick Guide](MauiGPT/QUICK_GUIDE.md)** - Quick reference
-- ?? **[Navigation Fix](MauiGPT/NAVIGATION_FIX.md)** - Shell navigation guide
-- ?? **[Flyout Fix](MauiGPT/FLYOUTPAGE_FIX.md)** - Sidebar implementation
+- 📖 **[Deployment Guide](MauiGPT/DEPLOYMENT_GUIDE.md)** - Detailed deployment steps
+- 🆕 **[New Features](MauiGPT/NEW_FEATURES.md)** - Timestamps, delete, dark mode
+- 🔧 **[Delete Troubleshooting](MauiGPT/DELETE_TROUBLESHOOTING.md)** - Debug delete issues
+- 🚀 **[Quick Guide](MauiGPT/QUICK_GUIDE.md)** - Quick reference
+- 🧭 **[Navigation Fix](MauiGPT/NAVIGATION_FIX.md)** - Shell navigation guide
+- 🎨 **[Flyout Fix](MauiGPT/FLYOUTPAGE_FIX.md)** - Sidebar implementation
 
 ---
 
-## ?? Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
@@ -504,7 +504,7 @@ dotnet user-secrets list
 2. **Verify API URL** in `AzureService.cs`
 3. **Test endpoint** in browser: `https://kennygpt.azurewebsites.net/api/chat/test`
 4. **Check API key** is correct
-5. **View logs** in Visual Studio ? Output ? Debug
+5. **View logs** in Visual Studio → Output → Debug
 
 </details>
 
@@ -532,7 +532,7 @@ See detailed troubleshooting: [`DEPLOYMENT_GUIDE.md`](MauiGPT/DEPLOYMENT_GUIDE.m
 
 ---
 
-## ?? Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -559,7 +559,7 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## ?? License
+## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
@@ -574,7 +574,7 @@ of this software and associated documentation files...
 
 ---
 
-## ?? Author
+## 👤 Author
 
 **Rory** (theredking-369)
 
@@ -583,7 +583,7 @@ of this software and associated documentation files...
 
 ---
 
-## ?? Acknowledgments
+## 🙏 Acknowledgments
 
 - **Azure OpenAI** for GPT-4o capabilities
 - **Microsoft** for .NET MAUI and ASP.NET Core frameworks
@@ -592,7 +592,7 @@ of this software and associated documentation files...
 
 ---
 
-## ?? Project Statistics
+## 📊 Project Statistics
 
 - **Lines of Code**: ~6,000+
 - **Languages**: C#, JavaScript, XAML
@@ -603,9 +603,9 @@ of this software and associated documentation files...
 
 ---
 
-## ??? Roadmap
+## 🗺️ Roadmap
 
-### ? Completed
+### ✅ Completed
 - [x] Core chat functionality
 - [x] Multi-platform mobile app
 - [x] Dark mode support
@@ -613,12 +613,12 @@ of this software and associated documentation files...
 - [x] Delete conversations
 - [x] Web search integration
 
-### ?? In Progress
+### 🚧 In Progress
 - [ ] Voice input (speech-to-text)
 - [ ] Image attachments
 - [ ] Export conversations (PDF/JSON)
 
-### ?? Planned
+### 📝 Planned
 - [ ] Push notifications
 - [ ] Offline mode with sync
 - [ ] Multi-language support
@@ -629,29 +629,29 @@ of this software and associated documentation files...
 
 ---
 
-## ?? Support
+## 📞 Support
 
 Need help? Here's how:
 
-1. **?? Check Documentation** - Most answers in the docs
-2. **?? Search Issues** - Check existing GitHub issues
-3. **?? Report Bug** - [Open a new issue](https://github.com/theredking-369/KennyGPT/issues)
-4. **?? Request Feature** - [Start a discussion](https://github.com/theredking-369/KennyGPT/discussions)
+1. **📖 Check Documentation** - Most answers in the docs
+2. **🔍 Search Issues** - Check existing GitHub issues
+3. **🐛 Report Bug** - [Open a new issue](https://github.com/theredking-369/KennyGPT/issues)
+4. **💡 Request Feature** - [Start a discussion](https://github.com/theredking-369/KennyGPT/discussions)
 
 ---
 
 <div align="center">
 
-## ? Star History
+## ⭐ Star History
 
-If you find this project helpful, please consider giving it a ?!
+If you find this project helpful, please consider giving it a ⭐!
 
 [![Star History Chart](https://api.star-history.com/svg?repos=theredking-369/KennyGPT&type=Date)](https://star-history.com/#theredking-369/KennyGPT&Date)
 
 ---
 
-**Built with ?? using .NET 9 and Azure**
+**Built with ❤️ using .NET 9 and Azure**
 
-[? Back to Top](#-kennygpt---full-stack-ai-chat-application)
+[⬆ Back to Top](#-kennygpt---full-stack-ai-chat-application)
 
 </div>
