@@ -1,10 +1,10 @@
-﻿# ?? KennyGPT Deployment Guide
+﻿# 📦 KennyGPT Deployment Guide
 
 Complete guide for deploying the KennyGPT application to production environments.
 
 ---
 
-## ?? Table of Contents
+## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
@@ -16,7 +16,7 @@ Complete guide for deploying the KennyGPT application to production environments
 
 ---
 
-## ?? Overview
+## 🌟 Overview
 
 KennyGPT consists of three deployable components:
 1. **Backend API** - ASP.NET Core hosted on Azure App Service
@@ -25,7 +25,7 @@ KennyGPT consists of three deployable components:
 
 ---
 
-## ? Prerequisites
+## ✅ Prerequisites
 
 ### General Requirements
 - Azure subscription ([Get free account](https://azure.microsoft.com/free/))
@@ -41,7 +41,7 @@ KennyGPT consists of three deployable components:
 
 ---
 
-## ?? Backend Deployment
+## 🚀 Backend Deployment
 
 ### Option 1: Deploy via Visual Studio (Recommended)
 
@@ -54,9 +54,9 @@ dotnet build -c Release
 
 #### Step 2: Publish from Visual Studio
 1. Open `KennyGPT.sln` in Visual Studio 2022
-2. Right-click `KennyGPT` project ? **Publish**
+2. Right-click `KennyGPT` project → **Publish**
 3. Click **Add a publish profile**
-4. Select **Azure ? Azure App Service (Windows)**
+4. Select **Azure → Azure App Service (Windows)**
 5. Sign in to your Azure account
 6. Create new App Service or select existing:
    - **Name**: `kennygpt` (or your preferred name)
@@ -69,8 +69,8 @@ dotnet build -c Release
 #### Step 3: Configure App Settings
 After deployment, add application settings in Azure Portal:
 
-1. Go to **Azure Portal ? App Services ? kennygpt**
-2. Navigate to **Configuration ? Application settings**
+1. Go to **Azure Portal → App Services → kennygpt**
+2. Navigate to **Configuration → Application settings**
 3. Add the following settings:
 
 | Name | Value | Type |
@@ -181,7 +181,7 @@ jobs:
 
 **Setup:**
 1. In Azure Portal, download the publish profile for your App Service
-2. In GitHub: Settings ? Secrets and variables ? Actions
+2. In GitHub: Settings → Secrets and variables → Actions
 3. Add new secret: `AZURE_WEBAPP_PUBLISH_PROFILE` with the downloaded profile content
 
 ### Database Migration
@@ -196,7 +196,7 @@ dotnet ef database update --project KennyGPT
 
 ---
 
-## ?? Mobile App Deployment
+## 📱 Mobile App Deployment
 
 ### Android Deployment
 
@@ -231,7 +231,7 @@ dotnet publish MauiGPT.csproj \
 #### Step 3: Upload to Google Play Console
 1. Go to [Google Play Console](https://play.google.com/console)
 2. Create new app or select existing
-3. Navigate to **Production ? Create new release**
+3. Navigate to **Production → Create new release**
 4. Upload the signed APK
 5. Complete store listing:
    - App name: **KennyGPT**
@@ -251,15 +251,15 @@ dotnet publish MauiGPT.csproj \
 
 #### Step 1: Configure Signing
 1. Open `MauiGPT.csproj` in Visual Studio for Mac
-2. Right-click project ? **Options**
-3. Navigate to **Build ? iOS Bundle Signing**
+2. Right-click project → **Options**
+3. Navigate to **Build → iOS Bundle Signing**
 4. Select **Distribution** configuration
 5. Choose your signing identity and provisioning profile
 
 #### Step 2: Archive App
 ```bash
 # In Visual Studio for Mac:
-# Build ? Archive for Publishing
+# Build → Archive for Publishing
 
 # Or via command line:
 dotnet publish MauiGPT.csproj \
@@ -270,7 +270,7 @@ dotnet publish MauiGPT.csproj \
 ```
 
 #### Step 3: Submit to App Store
-1. Open **Xcode ? Window ? Organizer**
+1. Open **Xcode → Window → Organizer**
 2. Select your archive
 3. Click **Distribute App**
 4. Choose **App Store Connect**
@@ -330,7 +330,7 @@ dotnet publish MauiGPT.csproj \
 
 ---
 
-## ?? Web Frontend Deployment
+## 🌐 Web Frontend Deployment
 
 The web frontend is already deployed on Azure Static Web Apps. To update:
 
@@ -353,7 +353,7 @@ swa deploy --app-name gray-ocean-0040c6203 \
 
 ---
 
-## ? Post-Deployment Checklist
+## ✅ Post-Deployment Checklist
 
 ### Backend Verification
 - [ ] API health check: `https://kennygpt.azurewebsites.net/api/chat/test`
@@ -389,7 +389,7 @@ swa deploy --app-name gray-ocean-0040c6203 \
 
 ---
 
-## ?? Troubleshooting
+## 🐛 Troubleshooting
 
 ### Backend Issues
 
@@ -398,7 +398,7 @@ swa deploy --app-name gray-ocean-0040c6203 \
 # Check logs
 az webapp log tail --name kennygpt --resource-group KennyGPT-RG
 
-# Or in Azure Portal: App Service ? Monitoring ? Log stream
+# Or in Azure Portal: App Service → Monitoring → Log stream
 ```
 
 **Problem**: Database connection fails
@@ -437,7 +437,7 @@ dotnet ef database update --connection "YOUR_CONNECTION_STRING"
 **Error**: "The specified framework 'Microsoft.NETCore.App', version '9.0.0' was not found"
 ```bash
 # Ensure Azure App Service has .NET 9 runtime
-# In Azure Portal: Configuration ? General settings ? Stack settings
+# In Azure Portal: Configuration → General settings → Stack settings
 # Set: .NET Version = .NET 9
 ```
 
@@ -463,13 +463,13 @@ dotnet ef database update --project KennyGPT
 
 ---
 
-## ?? Support
+## 📞 Support
 
 Need help with deployment?
 
 1. **Check Logs**:
-   - Backend: Azure Portal ? App Service ? Log stream
-   - Mobile: Visual Studio ? Output ? Debug
+   - Backend: Azure Portal → App Service → Log stream
+   - Mobile: Visual Studio → Output → Debug
 
 2. **Common Resources**:
    - [Azure App Service Docs](https://learn.microsoft.com/azure/app-service/)
@@ -482,7 +482,7 @@ Need help with deployment?
 
 ---
 
-## ?? Production Readiness
+## 🎯 Production Readiness
 
 Before going to production:
 
