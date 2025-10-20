@@ -1,4 +1,4 @@
-# ?? KennyGPT Deployment Guide
+﻿# ?? KennyGPT Deployment Guide
 
 Complete guide for deploying the KennyGPT application to production environments.
 
