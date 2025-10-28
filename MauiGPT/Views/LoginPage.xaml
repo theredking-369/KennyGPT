@@ -48,7 +48,11 @@
             </Border.Shadow>
 
             <VerticalStackLayout Spacing="20">
-                <Label Text="?? Enter Access Key" 
+                <Image Source="accesskey.png"/>
+
+
+                <Label 
+                        Text="?? Enter Access Key" 
                        FontSize="24"
                        FontAttributes="Bold"
                        TextColor="#333"
