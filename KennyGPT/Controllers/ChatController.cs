@@ -5,6 +5,7 @@ using KennyGPT.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace KennyGPT.Controllers
 {
@@ -14,24 +15,144 @@ namespace KennyGPT.Controllers
     {
         private readonly IAzureService _openAIService;
         private readonly ChatDbContext _dbContext;
+        private readonly ILogger<ChatController> _logger;
 
-        public ChatController(IAzureService openAIService, ChatDbContext dbContext)
+        public ChatController(IAzureService openAIService, ChatDbContext dbContext, ILogger<ChatController> logger)
         {
             _openAIService = openAIService;
             _dbContext = dbContext;
+            _logger = logger;
         }
 
+        // ✅ ENHANCED: Create session endpoint with detailed logging
+        [HttpPost("session")]
+        public async Task<ActionResult<MUserSession>> CreateSession()
+        {
+            try
+            {
+                _logger.LogInformation("📝 Session creation request received");
 
+                // Extract API key from header (already validated by middleware)
+                var apiKey = Request.Headers["X-API-Key"].ToString();
+                _logger.LogInformation($"   API Key: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : "Present")}");
+
+                // Create new session
+                var session = new MUserSession
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    UserId = Guid.NewGuid().ToString(), // Unique user ID per session
+                    ApiKey = apiKey == "public-demo-2024" ? null : apiKey, // Don't store public key
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddHours(1) // 1 hour session
+                };
+
+                _logger.LogInformation($"   Session ID: {session.Id}");
+                _logger.LogInformation($"   User ID: {session.UserId}");
+
+                _dbContext.UserSessions.Add(session);
+
+                _logger.LogInformation("   Saving to database...");
+                await _dbContext.SaveChangesAsync();
+
+                _logger.LogInformation($"✅ Session created successfully: {session.Id} for user: {session.UserId}");
+
+                return Ok(session);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError($"❌ Database error creating session: {dbEx.Message}");
+                _logger.LogError($"   Inner exception: {dbEx.InnerException?.Message}");
+                return StatusCode(500, new
+                {
+                    error = "Database error creating session",
+                    message = dbEx.InnerException?.Message ?? dbEx.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"❌ Error creating session: {ex.Message}");
+                _logger.LogError($"   Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new
+                {
+                    error = "Error creating session",
+                    message = ex.Message
+                });
+            }
+        }
+
+        // ✅ UPDATED: Get conversations filtered by session
+        [HttpGet("conversations")]
+        public async Task<ActionResult<List<MConversation>>> GetConversations()
+        {
+            try
+            {
+                // Get session ID from header
+                var sessionId = Request.Headers["X-Session-Id"].ToString();
+
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                }
+
+                // Validate session
+                var session = await _dbContext.UserSessions.FindAsync(sessionId);
+                if (session == null)
+                {
+                    return Unauthorized(new { expired = false, message = "Invalid session" });
+                }
+
+                if (DateTime.UtcNow >= session.ExpiresAt)
+                {
+                    return Unauthorized(new { expired = true, message = "Session expired" });
+                }
+
+                // Get conversations for this user only
+                var conversations = await _dbContext.Conversations
+                    .Where(c => c.UserId == session.UserId)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(50)
+                    .ToListAsync();
+
+                return Ok(conversations);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error loading conversations: {ex.Message}");
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
+        }
+
+        // ✅ UPDATED: Send message with session validation
         [HttpPost("send")]
         public async Task<ActionResult<MChatResponse>> SendMessage([FromBody] MChatRequest request)
         {
             try
             {
-                // Get or create conversation
-                var conversation = await GetOrCreateConversation(request.ConversationId);
+                // Get session ID from header
+                var sessionId = Request.Headers["X-Session-Id"].ToString();
+
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                }
+
+                // Validate session
+                var session = await _dbContext.UserSessions.FindAsync(sessionId);
+                if (session == null)
+                {
+                    return Unauthorized(new { expired = false, message = "Invalid session" });
+                }
+
+                if (DateTime.UtcNow >= session.ExpiresAt)
+                {
+                    return Unauthorized(new { expired = true, message = "Session expired" });
+                }
+
+                // Get or create conversation with user ID from session
+                var conversation = await GetOrCreateConversation(request.ConversationId, session.UserId);
                 bool isFirstMessage = conversation.Messages.Count == 0;
 
-                // Add user message to conversation
+                // Add user message
                 var userMessage = new MChatMessage
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -46,11 +167,11 @@ namespace KennyGPT.Controllers
 
                 // Get AI response
                 var aiResponse = await _openAIService.GetChatCompletion(
-                    conversation.Messages.TakeLast(10).ToList(), // Keep last 10 messages for context
+                    conversation.Messages.TakeLast(10).ToList(),
                     request.SystemPrompt
                 );
 
-                // Add AI response to conversation
+                // Add AI response
                 var assistantMessage = new MChatMessage
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -65,7 +186,6 @@ namespace KennyGPT.Controllers
 
                 await _dbContext.SaveChangesAsync();
 
-                // ✅ Update conversation title after first message
                 if (isFirstMessage)
                 {
                     await UpdateConversationTitle(conversation.Id, request.Message);
@@ -80,24 +200,7 @@ namespace KennyGPT.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
-
-        [HttpGet("conversations")]
-        public async Task<ActionResult<List<MConversation>>> GetConversations()
-        {
-            try
-            {
-                var conversations = await _dbContext.Conversations
-                    .OrderByDescending(c => c.CreatedAt)
-                    .Take(50)
-                    .ToListAsync();
-
-                return Ok(conversations);
-            }
-            catch(Exception ex)
-            {
+                _logger.LogError($"Error sending message: {ex.Message}");
                 return StatusCode(500, $"Error: {ex.Message}");
             }
         }
@@ -107,6 +210,19 @@ namespace KennyGPT.Controllers
         {
             try
             {
+                var sessionId = Request.Headers["X-Session-Id"].ToString();
+
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                }
+
+                var session = await _dbContext.UserSessions.FindAsync(sessionId);
+                if (session == null || DateTime.UtcNow >= session.ExpiresAt)
+                {
+                    return Unauthorized(new { expired = true, message = "Session expired" });
+                }
+
                 var messages = await _dbContext.ChatMessages
                     .Where(m => m.ConversationId == conversationId)
                     .OrderBy(m => m.Timestamp)
@@ -114,7 +230,7 @@ namespace KennyGPT.Controllers
 
                 return Ok(messages);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, $"Error: {ex.Message}");
             }
@@ -140,10 +256,7 @@ namespace KennyGPT.Controllers
                     return NotFound(new { message = "Conversation not found" });
                 }
 
-                // Delete all messages in the conversation
                 _dbContext.ChatMessages.RemoveRange(conversation.Messages);
-
-                // Delete the conversation
                 _dbContext.Conversations.Remove(conversation);
 
                 await _dbContext.SaveChangesAsync();
@@ -156,13 +269,14 @@ namespace KennyGPT.Controllers
             }
         }
 
-        private async Task<MConversation> GetOrCreateConversation(string? conversationId)
+        // ✅ UPDATED: Accept userId parameter
+        private async Task<MConversation> GetOrCreateConversation(string? conversationId, string userId)
         {
             if (!string.IsNullOrEmpty(conversationId))
             {
                 var existing = await _dbContext.Conversations
                     .Include(c => c.Messages)
-                    .FirstOrDefaultAsync(c => c.Id == conversationId);
+                    .FirstOrDefaultAsync(c => c.Id == conversationId && c.UserId == userId);
 
                 if (existing != null)
                     return existing;
@@ -171,8 +285,8 @@ namespace KennyGPT.Controllers
             var newConversation = new MConversation
             {
                 Id = Guid.NewGuid().ToString(),
-                UserId = "anonymous",
-                Title = "New Conversation",  // Will be updated after first message
+                UserId = userId, // Use session's user ID
+                Title = "New Conversation",
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -180,7 +294,6 @@ namespace KennyGPT.Controllers
             return newConversation;
         }
 
-        // ✅ Add this new method to update conversation title
         private async Task UpdateConversationTitle(string conversationId, string firstMessage)
         {
             var conversation = await _dbContext.Conversations.FindAsync(conversationId);
@@ -194,3 +307,6 @@ namespace KennyGPT.Controllers
         }
     }
 }
+
+// AUTO-APPLY DATABASE MIGRATIONS ON STARTUP
+

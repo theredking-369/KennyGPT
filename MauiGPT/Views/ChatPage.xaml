@@ -7,7 +7,7 @@
              x:Class="MauiGPT.Views.ChatPage"
              x:DataType="viewmodels:ChatViewModel"
              Shell.NavBarIsVisible="False"
-             Title="RoryGPT">
+             Title="KennyGPT">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IsEnabled="False" IsVisible="False"/>
@@ -39,7 +39,7 @@
                         Margin="0,0,0,1">
                     <Grid ColumnDefinitions="*,Auto">
                         <VerticalStackLayout Grid.Column="0" Spacing="5">
-                            <Label Text="RoryGPT" 
+                            <Label Text="KennyGPT" 
                                    FontSize="20"
                                    FontAttributes="Bold"
                                    TextColor="White"/>
@@ -193,7 +193,7 @@
                                        VerticalOptions="Center"
                                        HorizontalOptions="Center"
                                        Spacing="2">
-                        <Label Text="RoryGPT"
+                        <Label Text="KennyGPT"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="White"
@@ -238,7 +238,7 @@
                         <Label Text="??"
                                FontSize="48"
                                HorizontalOptions="Center"/>
-                        <Label Text="Welcome to RoryGPT!"
+                        <Label Text="Welcome to KennyGPT!"
                                FontSize="24"
                                FontAttributes="Bold"
                                TextColor="#495057"

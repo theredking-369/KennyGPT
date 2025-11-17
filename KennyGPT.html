@@ -1,0 +1,517 @@
+﻿<script>
+    // Configuration
+    const CONFIG = {
+        API_BASE_URL: window.location.hostname === 'localhost'
+            ? 'https://localhost:7066/api'
+            : 'https://kennygpt.azurewebsites.net/api',
+        REQUIRE_AUTH: true
+    };
+
+    // Global variables
+    let currentConversationId = null;
+    let isLoading = false;
+    let conversations = [];
+    let apiKey = null;
+    let isAuthenticated = false;
+    let sessionId = null;  // ✅ ADD THIS
+    let sessionExpires = null;  // ✅ ADD THIS
+
+    // DOM Elements
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const systemPromptInput = document.getElementById('systemPrompt');
+    const conversationsList = document.getElementById('conversationsList');
+    const conversationTitle = document.getElementById('conversationTitle');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+    const loginModal = document.getElementById('loginModal');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const loginError = document.getElementById('loginError');
+
+    // ✅ UPDATED: Check authentication with session
+    function checkAuthentication() {
+        if (!CONFIG.REQUIRE_AUTH) {
+            loginModal.classList.add('hidden');
+            isAuthenticated = true;
+            createSession();
+            return;
+        }
+
+        const savedApiKey = sessionStorage.getItem('kennygpt_api_key');
+        sessionId = sessionStorage.getItem('kennygpt_session_id');
+        sessionExpires = sessionStorage.getItem('kennygpt_session_expires');
+
+        // ✅ Check if session expired
+        if (sessionExpires && new Date(sessionExpires) < new Date()) {
+            console.log('⏰ Session expired, clearing data');
+            sessionStorage.clear();
+            loginModal.classList.remove('hidden');
+            apiKeyInput.focus();
+            return;
+        }
+
+        if (savedApiKey && sessionId) {
+            apiKey = savedApiKey;
+            loginModal.classList.add('hidden');
+            isAuthenticated = true;
+            loadConversationsFromServer();
+        } else {
+            loginModal.classList.remove('hidden');
+            apiKeyInput.focus();
+        }
+    }
+
+    // ✅ NEW: Create session
+    async function createSession() {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/chat/session`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey || 'public'
+                }
+            });
+
+            if (response.ok) {
+                const session = await response.json();
+                sessionId = session.id;
+                sessionExpires = session.expiresAt;
+                
+                sessionStorage.setItem('kennygpt_session_id', sessionId);
+                sessionStorage.setItem('kennygpt_session_expires', sessionExpires);
+                
+                console.log(`✅ Session created: ${sessionId}`);
+                console.log(`⏰ Expires: ${new Date(sessionExpires).toLocaleString()}`);
+                
+                await loadConversationsFromServer();
+            }
+        } catch (error) {
+            console.error('Error creating session:', error);
+        }
+    }
+
+    // ✅ UPDATED: Authenticate and create session
+    async function authenticate() {
+        const inputKey = apiKeyInput.value.trim();
+
+        if (!inputKey) {
+            showLoginError('Please enter an API key');
+            return;
+        }
+
+        loginError.classList.remove('show');
+
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/chat/test`, {
+                method: 'GET',
+                headers: { 'X-API-Key': inputKey }
+            });
+
+            if (response.ok) {
+                apiKey = inputKey;
+                sessionStorage.setItem('kennygpt_api_key', inputKey);
+                isAuthenticated = true;
+                
+                // ✅ Create session AFTER successful auth
+                await createSession();
+                
+                loginModal.classList.add('hidden');
+                apiKeyInput.value = '';
+            } else {
+                showLoginError('Invalid API key');
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            showLoginError('Connection failed. Check your backend.');
+        }
+    }
+
+    function showLoginError(message) {
+        loginError.textContent = message;
+        loginError.classList.add('show');
+    }
+
+    // ✅ UPDATED: Logout clears session
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            sessionStorage.clear();
+            apiKey = null;
+            isAuthenticated = false;
+            sessionId = null;
+            sessionExpires = null;
+            conversations = [];
+            currentConversationId = null;
+            loginModal.classList.remove('hidden');
+            apiKeyInput.value = '';
+            apiKeyInput.focus();
+            showEmptyState();
+            renderConversationsList();
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        checkAuthentication();
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeToggle').innerHTML = '<span class="theme-icon">☀️</span>';
+        }
+
+        apiKeyInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                authenticate();
+            }
+        });
+
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        systemPromptInput.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        messageInput.focus();
+    });
+
+    // ✅ UPDATED: Add session ID to headers
+    async function loadConversationsFromServer() {
+        if (!isAuthenticated) return;
+
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
+            };
+
+            // ✅ Add session ID
+            if (sessionId) {
+                headers['X-Session-Id'] = sessionId;
+            }
+
+            const response = await fetch(`${CONFIG.API_BASE_URL}/chat/conversations`, {
+                method: 'GET',
+                headers: headers
+            });
+
+            if (response.status === 401) {
+                const data = await response.json();
+                if (data.expired) {
+                    alert('⏰ Your 1-hour session has expired. Please login again.');
+                }
+                logout();
+                return;
+            }
+
+            if (response.ok) {
+                conversations = await response.json();
+                renderConversationsList();
+
+                if (conversations.length > 0) {
+                    await loadConversation(conversations[0].id);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+        }
+    }
+
+    // ✅ UPDATED: Add session ID to headers
+    async function loadConversation(conversationId) {
+        if (!isAuthenticated) return;
+
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
+            };
+
+            if (sessionId) {
+                headers['X-Session-Id'] = sessionId;
+            }
+
+            const response = await fetch(
+                `${CONFIG.API_BASE_URL}/chat/conversations/${conversationId}/messages`,
+                {
+                    method: 'GET',
+                    headers: headers
+                }
+            );
+
+            if (response.status === 401) {
+                const data = await response.json();
+                if (data.expired) {
+                    alert('⏰ Your session has expired.');
+                }
+                logout();
+                return;
+            }
+
+            if (response.ok) {
+                const messages = await response.json();
+
+                currentConversationId = conversationId;
+                chatMessages.innerHTML = '';
+
+                messages.forEach(msg => {
+                    addMessageToDOM(msg.content, msg.role === 'user');
+                });
+
+                if (messages.length === 0) {
+                    showEmptyState();
+                }
+
+                const conversation = conversations.find(c => c.id === conversationId);
+                if (conversation) {
+                    conversationTitle.textContent = conversation.title;
+                }
+
+                updateActiveConversation();
+
+                if (window.innerWidth <= 768) {
+                    toggleSidebar();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+        }
+    }
+
+    function renderConversationsList() {
+        conversationsList.innerHTML = '';
+
+        if (conversations.length === 0) {
+            conversationsList.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                    No conversations yet.<br>Start chatting to see them here!
+                </div>
+            `;
+            return;
+        }
+
+        conversations.forEach(conversation => {
+            const item = document.createElement('div');
+            item.className = 'conversation-item';
+            item.onclick = () => loadConversation(conversation.id);
+
+            const date = new Date(conversation.createdAt);
+            const formattedDate = date.toLocaleDateString() + ' ' +
+                date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            item.innerHTML = `
+                <div class="conversation-title">${conversation.title}</div>
+                <div class="conversation-date">${formattedDate}</div>
+            `;
+
+            conversationsList.appendChild(item);
+        });
+
+        updateActiveConversation();
+    }
+
+    function updateActiveConversation() {
+        const items = conversationsList.querySelectorAll('.conversation-item');
+        items.forEach(item => item.classList.remove('active'));
+
+        if (currentConversationId) {
+            const activeIndex = conversations.findIndex(c => c.id === currentConversationId);
+            if (activeIndex !== -1) {
+                items[activeIndex]?.classList.add('active');
+            }
+        }
+    }
+
+    function showEmptyState() {
+        chatMessages.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💬</div>
+                <h3>Welcome to KennyGPT!</h3>
+                <p>Start a conversation by typing a message below.</p>
+            </div>
+        `;
+    }
+
+    function addMessageToDOM(content, isUser = false, isLoading = false) {
+        const emptyState = chatMessages.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+
+        const avatarDiv = document.createElement('div');
+        avatarDiv.className = 'message-avatar';
+        avatarDiv.textContent = isUser ? 'U' : 'AI';
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+
+        if (isLoading) {
+            contentDiv.innerHTML = '<div class="loading">Thinking</div>';
+        } else {
+            contentDiv.textContent = content;
+        }
+
+        if (isUser) {
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(avatarDiv);
+        } else {
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+        }
+
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+
+        return contentDiv;
+    }
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const themeToggle = document.getElementById('themeToggle');
+
+        body.classList.toggle('dark-mode');
+
+        if (body.classList.contains('dark-mode')) {
+            themeToggle.innerHTML = '<span class="theme-icon">☀️</span>';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            themeToggle.innerHTML = '<span class="theme-icon">🌙</span>';
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    function toggleSidebar() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.toggle('open');
+            mobileOverlay.classList.toggle('show');
+        }
+    }
+
+    // ✅ UPDATED: Add session ID to headers
+    async function sendMessage() {
+        if (!isAuthenticated) {
+            alert('Please login first');
+            return;
+        }
+
+        if (isLoading) return;
+
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        const systemPrompt = systemPromptInput.value.trim();
+
+        addMessageToDOM(message, true);
+
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+        isLoading = true;
+        sendButton.disabled = true;
+
+        const loadingContentDiv = addMessageToDOM('', false, true);
+
+        try {
+            const requestBody = {
+                message: message,
+                conversationId: currentConversationId,
+                systemPrompt: systemPrompt || null
+            };
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey
+            };
+
+            // ✅ Add session ID
+            if (sessionId) {
+                headers['X-Session-Id'] = sessionId;
+            }
+
+            const response = await fetch(`${CONFIG.API_BASE_URL}/chat/send`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(requestBody)
+            });
+
+            if (response.status === 401) {
+                const data = await response.json();
+                if (data.expired) {
+                    alert('⏰ Your 1-hour session has expired. Please login again.');
+                }
+                logout();
+                throw new Error('Session expired');
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            currentConversationId = data.conversationId;
+
+            loadingContentDiv.innerHTML = '';
+            loadingContentDiv.textContent = data.response;
+
+            await loadConversationsFromServer();
+
+            updateActiveConversation();
+
+            const conversation = conversations.find(c => c.id === currentConversationId);
+            if (conversation) {
+                conversationTitle.textContent = conversation.title;
+            }
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            loadingContentDiv.innerHTML = '';
+            loadingContentDiv.innerHTML = `<div style="color: #dc3545;">❌ ${error.message || 'Sorry, something went wrong.'}</div>`;
+        } finally {
+            isLoading = false;
+            sendButton.disabled = false;
+            messageInput.focus();
+        }
+    }
+
+    function startNewConversation() {
+        currentConversationId = null;
+        conversationTitle.textContent = 'New Conversation';
+        showEmptyState();
+        updateActiveConversation();
+        messageInput.focus();
+
+        if (window.innerWidth <= 768) {
+            toggleSidebar();
+        }
+    }
+
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    window.addEventListener('unhandledrejection', function (event) {
+        console.error('Unhandled promise rejection:', event.reason);
+    });
+
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('open');
+            mobileOverlay.classList.remove('show');
+        }
+    });
+</script>

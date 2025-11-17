@@ -4,6 +4,7 @@
     {
         private readonly RequestDelegate _next;
         private const string API_KEY_HEADER = "X-API-Key";
+        private const string SESSION_ID_HEADER = "X-Session-Id";
         private readonly ILogger<ApiKeyMiddleware> _logger;
 
         public ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger)
@@ -28,6 +29,8 @@
                 return;
             }
 
+            context.Request.Headers.TryGetValue(SESSION_ID_HEADER, out var sessionId);
+
             if (!context.Request.Headers.TryGetValue(API_KEY_HEADER, out var extractedApiKey))
             {
                 _logger.LogWarning("API key missing from request");
@@ -37,16 +40,18 @@
             }
 
             var apiKey = configuration["ApiKey"];
+            var publicDemoKey = configuration["PublicDemoKey"]; // ✅ Add public key
 
             if (string.IsNullOrEmpty(apiKey))
             {
-                _logger.LogError("API Key not configured in application settings");
+                _logger.LogError("API Key not configured");
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("API Key not configured");
                 return;
             }
 
-            if (!apiKey.Equals(extractedApiKey))
+            // ✅ Accept BOTH private AND public keys
+            if (!apiKey.Equals(extractedApiKey) && !publicDemoKey.Equals(extractedApiKey))
             {
                 _logger.LogWarning("Invalid API key attempt");
                 context.Response.StatusCode = 401;

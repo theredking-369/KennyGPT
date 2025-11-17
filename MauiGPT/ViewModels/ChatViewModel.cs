@@ -1,4 +1,4 @@
-using MauiGPT.Interfaces;
+﻿using MauiGPT.Interfaces;
 using MauiGPT.Models;
 using MauiGPT.Helpers;
 using System.Collections.ObjectModel;
@@ -93,7 +93,31 @@ namespace MauiGPT.ViewModels
                 return;
             }
 
+            // ✅ Check session expiry
+            await CheckSessionExpiry();
+
             await LoadConversationsAsync();
+        }
+
+        // ✅ NEW: Check if session has expired
+        private async Task CheckSessionExpiry()
+        {
+            var expiresString = await SecureStorage.GetAsync("session_expires");
+            if (!string.IsNullOrEmpty(expiresString))
+            {
+                if (DateTime.TryParse(expiresString, out var expires))
+                {
+                    if (DateTime.UtcNow >= expires)
+                    {
+                        AppLogger.Log("⏰ Session expired");
+                        await Application.Current.MainPage.DisplayAlert(
+                            "Session Expired",
+                            "Your 1-hour session has expired. Please login again.",
+                            "OK");
+                        await LogoutAsync();
+                    }
+                }
+            }
         }
 
         private async Task LoadConversationsAsync()
@@ -110,7 +134,6 @@ namespace MauiGPT.ViewModels
                     Conversations.Add(conv);
                 }
 
-                // Load the most recent conversation
                 if (Conversations.Count > 0 && string.IsNullOrEmpty(_currentConversationId))
                 {
                     await LoadConversationAsync(Conversations[0]);
@@ -118,6 +141,17 @@ namespace MauiGPT.ViewModels
             }
             catch (Exception ex)
             {
+                // ✅ Check for session expiry
+                if (ex.Message.Contains("SESSION_EXPIRED"))
+                {
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Session Expired",
+                        "Your 1-hour session has expired. Please login again.",
+                        "OK");
+                    await LogoutAsync();
+                    return;
+                }
+
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to load conversations: {ex.Message}", "OK");
             }
             finally
@@ -148,6 +182,17 @@ namespace MauiGPT.ViewModels
             }
             catch (Exception ex)
             {
+                // ✅ Check for session expiry
+                if (ex.Message.Contains("SESSION_EXPIRED"))
+                {
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Session Expired",
+                        "Your session has expired.",
+                        "OK");
+                    await LogoutAsync();
+                    return;
+                }
+
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to load conversation: {ex.Message}", "OK");
             }
         }
@@ -168,7 +213,6 @@ namespace MauiGPT.ViewModels
             var userMessage = MessageText;
             MessageText = string.Empty;
 
-            // Add user message to UI
             Messages.Add(new ChatMessageViewModel
             {
                 Content = userMessage,
@@ -176,7 +220,6 @@ namespace MauiGPT.ViewModels
                 Timestamp = DateTime.Now
             });
 
-            // Add loading indicator
             var loadingMessage = new ChatMessageViewModel
             {
                 Content = "Thinking...",
@@ -199,10 +242,8 @@ namespace MauiGPT.ViewModels
 
                 var response = await _azureService.SendMessageAsync(request, _apiKey);
 
-                // Remove loading message
                 Messages.Remove(loadingMessage);
 
-                // Add assistant response
                 Messages.Add(new ChatMessageViewModel
                 {
                     Content = response.Response,
@@ -210,18 +251,28 @@ namespace MauiGPT.ViewModels
                     Timestamp = response.Timestamp
                 });
 
-                // Update conversation ID
                 _currentConversationId = response.ConversationId;
 
-                // Reload conversations to get updated list
                 await LoadConversationsAsync();
             }
             catch (Exception ex)
             {
                 Messages.Remove(loadingMessage);
+
+                // ✅ Check for session expiry
+                if (ex.Message.Contains("SESSION_EXPIRED"))
+                {
+                    await Application.Current.MainPage.DisplayAlert(
+                        "Session Expired",
+                        "Your 1-hour session has expired. Please login again.",
+                        "OK");
+                    await LogoutAsync();
+                    return;
+                }
+
                 Messages.Add(new ChatMessageViewModel
                 {
-                    Content = $"? Error: {ex.Message}",
+                    Content = $"❌ Error: {ex.Message}",
                     IsUser = false,
                     Timestamp = DateTime.Now
                 });
@@ -243,6 +294,10 @@ namespace MauiGPT.ViewModels
             if (confirm)
             {
                 SecureStorage.Remove("api_key");
+                SecureStorage.Remove("session_id");
+                SecureStorage.Remove("session_expires");
+                SecureStorage.Remove("user_id");
+                
                 await Shell.Current.GoToAsync("..");
             }
         }
@@ -260,18 +315,12 @@ namespace MauiGPT.ViewModels
 
             try
             {
-                AppLogger.Log($"Attempting to delete conversation: {conversation.Id}");
-                
                 var success = await _azureService.DeleteConversationAsync(conversation.Id, _apiKey);
 
                 if (success)
                 {
-                    AppLogger.Log("Conversation deleted successfully from backend");
-                    
-                    // Remove from local list
                     Conversations.Remove(conversation);
 
-                    // If this was the current conversation, start a new one
                     if (_currentConversationId == conversation.Id)
                     {
                         StartNewConversation();
@@ -282,18 +331,9 @@ namespace MauiGPT.ViewModels
                         "Conversation deleted successfully",
                         "OK");
                 }
-                else
-                {
-                    AppLogger.Log("Failed to delete conversation - backend returned false");
-                    await Application.Current.MainPage.DisplayAlert(
-                        "Error",
-                        "Failed to delete conversation",
-                        "OK");
-                }
             }
             catch (Exception ex)
             {
-                AppLogger.LogError($"Exception while deleting conversation", ex);
                 await Application.Current.MainPage.DisplayAlert(
                     "Error",
                     $"Failed to delete conversation: {ex.Message}",

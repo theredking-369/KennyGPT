@@ -30,8 +30,8 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
-        /* Login Modal Styles */
-        .login-modal {
+        /* Loading Modal Styles */
+        .loading-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -44,11 +44,11 @@
             z-index: 10000;
         }
 
-            .login-modal.hidden {
+            .loading-modal.hidden {
                 display: none;
             }
 
-        .login-box {
+        .loading-box {
             background: white;
             padding: 40px;
             border-radius: 20px;
@@ -58,68 +58,43 @@
             text-align: center;
         }
 
-            .login-box h2 {
+            .loading-box h2 {
                 margin-bottom: 10px;
                 color: #333;
                 font-size: 28px;
             }
 
-            .login-box p {
+            .loading-box p {
                 color: #666;
                 margin-bottom: 30px;
                 font-size: 14px;
             }
 
-        .login-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            font-family: inherit;
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
 
-            .login-input:focus {
-                outline: none;
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
             }
 
-        .login-button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status-message {
+            color: #667eea;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            margin-top: 20px;
         }
-
-            .login-button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-            }
-
-            .login-button:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-                transform: none;
-            }
-
-        .login-error {
-            color: #dc3545;
-            margin-top: 15px;
-            font-size: 14px;
-            display: none;
-        }
-
-            .login-error.show {
-                display: block;
-            }
 
         /* Sidebar Styles */
         .sidebar {
@@ -148,6 +123,15 @@
                 opacity: 0.7;
             }
 
+        .session-info {
+            font-size: 11px;
+            color: #ffc107;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .theme-toggle {
             position: absolute;
             top: 20px;
@@ -166,25 +150,6 @@
             .theme-toggle:hover {
                 background: rgba(255, 255, 255, 0.2);
                 transform: scale(1.1);
-            }
-
-        .logout-btn {
-            width: calc(100% - 40px);
-            padding: 10px;
-            margin: 10px 20px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-            .logout-btn:hover {
-                background: #c82333;
-                transform: translateY(-1px);
             }
 
         .new-chat-btn {
@@ -250,27 +215,6 @@
         .conversation-date {
             font-size: 12px;
             opacity: 0.6;
-        }
-
-        .conversation-delete {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #dc3545;
-            color: white;
-            border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .conversation-item:hover .conversation-delete {
-            opacity: 1;
         }
 
         /* Main Chat Styles */
@@ -495,16 +439,6 @@
                 animation: spin 1s linear infinite;
             }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -676,7 +610,7 @@
                 padding: 15px;
             }
 
-            .login-box {
+            .loading-box {
                 padding: 30px 20px;
             }
         }
@@ -701,22 +635,13 @@
     </style>
 </head>
 <body>
-    <!-- Login Modal -->
-    <div class="login-modal" id="loginModal">
-        <div class="login-box">
-            <h2>🔐 KennyGPT</h2>
-            <p>Enter your API key to continue</p>
-            <input type="password"
-                   id="apiKeyInput"
-                   class="login-input"
-                   placeholder="Your API Key"
-                   autocomplete="off">
-            <button class="login-button" onclick="authenticate()">
-                Unlock Access
-            </button>
-            <div class="login-error" id="loginError">
-                Invalid API key. Please try again.
-            </div>
+    <!-- Loading Modal -->
+    <div class="loading-modal" id="loadingModal">
+        <div class="loading-box">
+            <h2>💬 KennyGPT</h2>
+            <p>Starting your free 1-hour session...</p>
+            <div class="loading-spinner"></div>
+            <div class="status-message" id="statusMessage">Connecting to server...</div>
         </div>
     </div>
 
@@ -728,14 +653,13 @@
             <div class="sidebar-header">
                 <h2>KennyGPT</h2>
                 <p>Your Personal AI Assistant</p>
+                <div class="session-info" id="sessionInfo">
+                    ⏰ Session expires in: <span id="timeRemaining">--</span>
+                </div>
                 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
                     <span class="theme-icon">🌙</span>
                 </button>
             </div>
-
-            <button class="logout-btn" onclick="logout()">
-                🚪 Logout
-            </button>
 
             <button class="new-chat-btn" onclick="startNewConversation()">
                 + New Conversation
@@ -770,7 +694,7 @@
                 <div class="empty-state">
                     <div class="empty-state-icon">💬</div>
                     <h3>Welcome to KennyGPT!</h3>
-                    <p>Start a conversation by typing a message below. You can customize the AI's behavior using the system instructions above.</p>
+                    <p>Start a conversation by typing a message below. You have 1 hour of free access!</p>
                 </div>
             </div>
 
@@ -787,21 +711,24 @@
     </div>
 
     <script>
-        // Configuration - UPDATE THESE AFTER DEPLOYMENT
+        // Configuration
         const CONFIG = {
             API_BASE_URL: window.location.hostname === 'localhost'
                 ? 'https://localhost:7066/api'
                 : 'https://kennygpt.azurewebsites.net/api',
-
-            REQUIRE_AUTH: true
+            PUBLIC_DEMO_KEY: 'public-demo-2024',
+            REQUIRE_AUTH: false
         };
 
         // Global variables
         let currentConversationId = null;
         let isLoading = false;
-        let conversations = [];  // Now loaded from server, not localStorage
-        let apiKey = null;
+        let conversations = [];
+        let apiKey = CONFIG.PUBLIC_DEMO_KEY;
         let isAuthenticated = false;
+        let sessionId = null;
+        let sessionExpires = null;
+        let timeRemainingInterval = null;
 
         // DOM Elements
         const chatMessages = document.getElementById('chatMessages');
@@ -812,100 +739,17 @@
         const conversationTitle = document.getElementById('conversationTitle');
         const sidebar = document.getElementById('sidebar');
         const mobileOverlay = document.getElementById('mobileOverlay');
-        const loginModal = document.getElementById('loginModal');
-        const apiKeyInput = document.getElementById('apiKeyInput');
-        const loginError = document.getElementById('loginError');
-
-        // Authentication Functions
-        function checkAuthentication() {
-            if (!CONFIG.REQUIRE_AUTH) {
-                loginModal.classList.add('hidden');
-                isAuthenticated = true;
-                loadConversationsFromServer();  // ✅ Load from server
-                return;
-            }
-
-            const savedApiKey = sessionStorage.getItem('kennygpt_api_key');
-            if (savedApiKey) {
-                apiKey = savedApiKey;
-                loginModal.classList.add('hidden');
-                isAuthenticated = true;
-                loadConversationsFromServer();  // ✅ Load from server after auth
-            } else {
-                loginModal.classList.remove('hidden');
-                apiKeyInput.focus();
-            }
-        }
-
-        async function authenticate() {
-            const inputKey = apiKeyInput.value.trim();
-
-            if (!inputKey) {
-                showLoginError('Please enter an API key');
-                return;
-            }
-
-            loginError.classList.remove('show');
-
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/test`, {
-                    method: 'GET',
-                    headers: { 'X-API-Key': inputKey }
-                });
-
-                if (response.ok) {
-                    apiKey = inputKey;
-                    sessionStorage.setItem('kennygpt_api_key', inputKey);
-                    isAuthenticated = true;
-                    loginModal.classList.add('hidden');
-                    apiKeyInput.value = '';
-
-                    // ✅ Load conversations after successful authentication
-                    await loadConversationsFromServer();
-                } else {
-                    showLoginError('Invalid API key');
-                }
-            } catch (error) {
-                console.error('Authentication error:', error);
-                showLoginError('Connection failed. Check your backend.');
-            }
-        }
-
-        function showLoginError(message) {
-            loginError.textContent = message;
-            loginError.classList.add('show');
-        }
-
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                sessionStorage.removeItem('kennygpt_api_key');
-                apiKey = null;
-                isAuthenticated = false;
-                conversations = [];
-                currentConversationId = null;
-                loginModal.classList.remove('hidden');
-                apiKeyInput.value = '';
-                apiKeyInput.focus();
-                showEmptyState();
-                renderConversationsList();
-            }
-        }
+        const loadingModal = document.getElementById('loadingModal');
+        const statusMessage = document.getElementById('statusMessage');
+        const timeRemainingDisplay = document.getElementById('timeRemaining');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
-            checkAuthentication();
-
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('themeToggle').innerHTML = '<span class="theme-icon">☀️</span>';
             }
-
-            apiKeyInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    authenticate();
-                }
-            });
 
             messageInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -922,32 +766,112 @@
                 this.style.height = this.scrollHeight + 'px';
             });
 
-            messageInput.focus();
+            // Auto-start session
+            startSession();
         });
 
-        // ✅ NEW: Server-Side Conversation Functions
+        // Session Management
+        async function startSession() {
+            try {
+                // Clear any previous session data
+                sessionStorage.clear();
+
+                statusMessage.textContent = 'Creating your session...';
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/session`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': CONFIG.PUBLIC_DEMO_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    const session = await response.json();
+                    sessionId = session.id;
+                    sessionExpires = session.expiresAt;
+
+                    sessionStorage.setItem('kennygpt_api_key', CONFIG.PUBLIC_DEMO_KEY);
+                    sessionStorage.setItem('kennygpt_session_id', sessionId);
+                    sessionStorage.setItem('kennygpt_session_expires', sessionExpires);
+
+                    console.log(`✅ Session created: ${sessionId}`);
+                    console.log(`⏰ Expires: ${new Date(sessionExpires).toLocaleString()}`);
+
+                    isAuthenticated = true;
+                    loadingModal.classList.add('hidden');
+
+                    // Start countdown timer
+                    startTimeRemaining();
+
+                    await loadConversationsFromServer();
+                    messageInput.focus();
+                } else {
+                    throw new Error('Failed to create session');
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+                statusMessage.textContent = 'Connection failed. Please refresh the page.';
+                statusMessage.style.color = '#dc3545';
+            }
+        }
+
+        function startTimeRemaining() {
+            updateTimeRemaining();
+            timeRemainingInterval = setInterval(updateTimeRemaining, 1000);
+        }
+
+        function updateTimeRemaining() {
+            if (!sessionExpires) return;
+
+            const now = new Date();
+            const expires = new Date(sessionExpires);
+            const diff = expires - now;
+
+            if (diff <= 0) {
+                clearInterval(timeRemainingInterval);
+                timeRemainingDisplay.textContent = 'Expired';
+                alert('⏰ Your 1-hour session has expired. Please refresh the page to start a new session.');
+                return;
+            }
+
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            timeRemainingDisplay.textContent = `${minutes}m ${seconds}s`;
+        }
+
         async function loadConversationsFromServer() {
             if (!isAuthenticated) return;
 
             try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': apiKey
+                };
+
+                if (sessionId) {
+                    headers['X-Session-Id'] = sessionId;
+                }
+
                 const response = await fetch(`${CONFIG.API_BASE_URL}/chat/conversations`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': apiKey
-                    }
+                    headers: headers
                 });
+
+                if (response.status === 401) {
+                    const data = await response.json();
+                    if (data.expired) {
+                        alert('⏰ Your session has expired. Please refresh the page.');
+                    }
+                    return;
+                }
 
                 if (response.ok) {
                     conversations = await response.json();
                     renderConversationsList();
 
-                    // Load last conversation if exists
                     if (conversations.length > 0) {
                         await loadConversation(conversations[0].id);
                     }
-                } else if (response.status === 401) {
-                    logout();
                 }
             } catch (error) {
                 console.error('Error loading conversations:', error);
@@ -958,16 +882,27 @@
             if (!isAuthenticated) return;
 
             try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': apiKey
+                };
+
+                if (sessionId) {
+                    headers['X-Session-Id'] = sessionId;
+                }
+
                 const response = await fetch(
                     `${CONFIG.API_BASE_URL}/chat/conversations/${conversationId}/messages`,
                     {
                         method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-API-Key': apiKey
-                        }
+                        headers: headers
                     }
                 );
+
+                if (response.status === 401) {
+                    alert('⏰ Your session has expired.');
+                    return;
+                }
 
                 if (response.ok) {
                     const messages = await response.json();
@@ -983,7 +918,6 @@
                         showEmptyState();
                     }
 
-                    // Update UI
                     const conversation = conversations.find(c => c.id === conversationId);
                     if (conversation) {
                         conversationTitle.textContent = conversation.title;
@@ -994,8 +928,6 @@
                     if (window.innerWidth <= 768) {
                         toggleSidebar();
                     }
-                } else if (response.status === 401) {
-                    logout();
                 }
             } catch (error) {
                 console.error('Error loading conversation:', error);
@@ -1007,10 +939,10 @@
 
             if (conversations.length === 0) {
                 conversationsList.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                        No conversations yet.<br>Start chatting to see them here!
-                    </div>
-                `;
+                        <div style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                            No conversations yet.<br>Start chatting to see them here!
+                        </div>
+                    `;
                 return;
             }
 
@@ -1024,9 +956,9 @@
                     date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 item.innerHTML = `
-                    <div class="conversation-title">${conversation.title}</div>
-                    <div class="conversation-date">${formattedDate}</div>
-                `;
+                        <div class="conversation-title">${conversation.title}</div>
+                        <div class="conversation-date">${formattedDate}</div>
+                    `;
 
                 conversationsList.appendChild(item);
             });
@@ -1046,15 +978,14 @@
             }
         }
 
-        // UI Functions
         function showEmptyState() {
             chatMessages.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">💬</div>
-                    <h3>Welcome to KennyGPT!</h3>
-                    <p>Start a conversation by typing a message below.</p>
-                </div>
-            `;
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💬</div>
+                        <h3>Welcome to KennyGPT!</h3>
+                        <p>Start a conversation by typing a message below. You have 1 hour of free access!</p>
+                    </div>
+                `;
         }
 
         function addMessageToDOM(content, isUser = false, isLoading = false) {
@@ -1119,10 +1050,9 @@
             }
         }
 
-        // API Functions
         async function sendMessage() {
             if (!isAuthenticated) {
-                alert('Please login first');
+                alert('Please wait while session is being created...');
                 return;
             }
 
@@ -1133,10 +1063,8 @@
 
             const systemPrompt = systemPromptInput.value.trim();
 
-            // Add user message to DOM
             addMessageToDOM(message, true);
 
-            // Clear input and add loading message
             messageInput.value = '';
             messageInput.style.height = 'auto';
             isLoading = true;
@@ -1152,11 +1080,12 @@
                 };
 
                 const headers = {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-API-Key': apiKey
                 };
 
-                if (CONFIG.REQUIRE_AUTH && apiKey) {
-                    headers['X-API-Key'] = apiKey;
+                if (sessionId) {
+                    headers['X-Session-Id'] = sessionId;
                 }
 
                 const response = await fetch(`${CONFIG.API_BASE_URL}/chat/send`, {
@@ -1166,8 +1095,11 @@
                 });
 
                 if (response.status === 401) {
-                    logout();
-                    throw new Error('Session expired. Please login again.');
+                    const data = await response.json();
+                    if (data.expired) {
+                        alert('⏰ Your 1-hour session has expired. Please refresh the page.');
+                    }
+                    throw new Error('Session expired');
                 }
 
                 if (!response.ok) {
@@ -1176,17 +1108,13 @@
 
                 const data = await response.json();
 
-                // ✅ Update conversation ID from server response
                 currentConversationId = data.conversationId;
 
-                // Replace loading message with actual response
                 loadingContentDiv.innerHTML = '';
                 loadingContentDiv.textContent = data.response;
 
-                // ✅ Reload conversations from server to get updated list
                 await loadConversationsFromServer();
 
-                // Update active conversation in UI
                 updateActiveConversation();
 
                 const conversation = conversations.find(c => c.id === currentConversationId);
@@ -1197,7 +1125,7 @@
             } catch (error) {
                 console.error('Error sending message:', error);
                 loadingContentDiv.innerHTML = '';
-                loadingContentDiv.innerHTML = `<div style="color: #dc3545;">❌ ${error.message || 'Sorry, something went wrong. Please try again.'}</div>`;
+                loadingContentDiv.innerHTML = `<div style="color: #dc3545;">❌ ${error.message || 'Sorry, something went wrong.'}</div>`;
             } finally {
                 isLoading = false;
                 sendButton.disabled = false;
@@ -1217,11 +1145,6 @@
             }
         }
 
-        // Utility Functions
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
         window.addEventListener('unhandledrejection', function (event) {
             console.error('Unhandled promise rejection:', event.reason);
         });
@@ -1230,6 +1153,13 @@
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('open');
                 mobileOverlay.classList.remove('show');
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function () {
+            if (timeRemainingInterval) {
+                clearInterval(timeRemainingInterval);
             }
         });
     </script>

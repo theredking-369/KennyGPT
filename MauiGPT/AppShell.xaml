@@ -7,9 +7,16 @@
     FlyoutBehavior="Disabled"
     Shell.NavBarIsVisible="False">
 
+    <!-- Login Page (Initial Page) -->
     <ShellContent
         Title="Login"
         ContentTemplate="{DataTemplate views:LoginPage}"
         Route="LoginPage" />
+
+    <!-- ✅ ADD THIS: Chat Page -->
+    <ShellContent
+        Title="Chat"
+        ContentTemplate="{DataTemplate views:ChatPage}"
+        Route="ChatPage" />
 
 </Shell>
