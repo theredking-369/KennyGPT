@@ -81,7 +81,7 @@ Always use the search tool for current information requests.";
 
             var options = new ChatCompletionOptions
             {
-                Temperature = 0.7f,
+                Temperature = 0.8f,
                 MaxOutputTokenCount = 1000,
                 Tools = { searchTool }
             };
@@ -149,7 +149,7 @@ Always use the search tool for current information requests.";
 
             var options = new ChatCompletionOptions
             {
-                Temperature = 0.7f,
+                Temperature = 0.8f,
                 MaxOutputTokenCount = 1000
             };
 

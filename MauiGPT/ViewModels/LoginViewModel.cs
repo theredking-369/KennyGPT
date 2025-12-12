@@ -1,7 +1,6 @@
 ﻿using MauiGPT.Interfaces;
 using MauiGPT.Helpers;
 using MauiGPT.Models;
-using System.Windows.Input;
 using System.Net.Http.Json;
 
 namespace MauiGPT.ViewModels
@@ -20,7 +19,6 @@ namespace MauiGPT.ViewModels
             _azureService = azureService;
             _httpClient = httpClient;
             
-            // ✅ Start with delay
             Task.Run(async () =>
             {
                 await Task.Delay(500);
@@ -47,38 +45,22 @@ namespace MauiGPT.ViewModels
                 StatusMessage = "Checking session...";
                 AppLogger.Log("🔍 Checking existing session...");
                 
-                // ✅ NEW: Try to use existing session first
+                // ✅ Try to resume existing session (no expiry check needed)
                 var existingSessionId = await SecureStorage.GetAsync("session_id");
-                var existingExpires = await SecureStorage.GetAsync("session_expires");
                 
-                if (!string.IsNullOrEmpty(existingSessionId) && !string.IsNullOrEmpty(existingExpires))
+                if (!string.IsNullOrEmpty(existingSessionId))
                 {
-                    if (DateTime.TryParse(existingExpires, out var expiresAt))
+                    AppLogger.Log($"✅ Existing session found: {existingSessionId}");
+                    StatusMessage = "Resuming session...";
+                    await Task.Delay(1000);
+                    
+                    MainThread.BeginInvokeOnMainThread(async () =>
                     {
-                        if (DateTime.UtcNow < expiresAt)
-                        {
-                            // Session is still valid
-                            var remaining = expiresAt - DateTime.UtcNow;
-                            AppLogger.Log($"✅ Existing session valid for {remaining.Minutes} more minutes");
-                            StatusMessage = $"Resuming session ({remaining.Minutes}m left)...";
-                            await Task.Delay(1000);
-                            
-                            MainThread.BeginInvokeOnMainThread(async () =>
-                            {
-                                await Shell.Current.GoToAsync("ChatPage");
-                            });
-                            return; // ✅ Don't create new session
-                        }
-                        else
-                        {
-                            AppLogger.Log("⏰ Session expired, creating new one");
-                            StatusMessage = "Session expired, creating new one...";
-                            ClearPreviousSession(); // Clear expired session
-                        }
-                    }
+                        await Shell.Current.GoToAsync("ChatPage");
+                    });
+                    return; // ✅ Session persists forever
                 }
                 
-                // ✅ Only create new session if none exists or expired
                 StatusMessage = "Testing connection...";
                 AppLogger.Log("🔍 Testing server connection...");
                 
@@ -94,11 +76,7 @@ namespace MauiGPT.ViewModels
                     {
                         await Shell.Current.DisplayAlert(
                             "Connection Error",
-                            "Cannot connect to the server. Please check:\n\n" +
-                            "1. Your internet connection\n" +
-                            "2. The server is running at:\n" +
-                            "   https://kennygpt.azurewebsites.net\n\n" +
-                            "Try again in a few moments.",
+                            "Cannot connect to the server. Please check your internet connection.",
                             "OK");
                     });
                     return;
@@ -106,7 +84,7 @@ namespace MauiGPT.ViewModels
 
                 AppLogger.Log("✅ Server connection successful");
                 StatusMessage = "Creating your session...";
-                AppLogger.Log("📝 Requesting new session from server...");
+                AppLogger.Log("📝 Requesting new permanent session...");
 
                 var session = await CreateNewSession(PUBLIC_DEMO_KEY);
                 
@@ -114,13 +92,12 @@ namespace MauiGPT.ViewModels
                 {
                     await SecureStorage.SetAsync("api_key", PUBLIC_DEMO_KEY);
                     await SecureStorage.SetAsync("session_id", session.Id);
-                    await SecureStorage.SetAsync("session_expires", session.ExpiresAt.ToString("O"));
                     await SecureStorage.SetAsync("user_id", session.UserId);
 
                     AppLogger.Log($"✅ Session created successfully");
                     AppLogger.Log($"   Session ID: {session.Id}");
                     AppLogger.Log($"   User ID: {session.UserId}");
-                    AppLogger.Log($"   Expires: {session.ExpiresAt.ToLocalTime()}");
+                    AppLogger.Log($"   Status: PERMANENT (no expiration)");
 
                     StatusMessage = "Welcome! Starting chat...";
                     await Task.Delay(500);
@@ -140,24 +117,10 @@ namespace MauiGPT.ViewModels
                     {
                         await Shell.Current.DisplayAlert(
                             "Session Error",
-                            "Failed to create a session. The server may be unavailable.\n\nPlease restart the app.",
+                            "Failed to create a session. Please restart the app.",
                             "OK");
                     });
                 }
-            }
-            catch (HttpRequestException httpEx)
-            {
-                StatusMessage = "Network error";
-                AppLogger.LogError($"❌ HTTP Error: {httpEx.Message}", httpEx);
-                await Task.Delay(2000);
-                
-                MainThread.BeginInvokeOnMainThread(async () =>
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Network Error",
-                        $"Cannot reach the server:\n\n{httpEx.Message}\n\nPlease check your internet connection.",
-                        "OK");
-                });
             }
             catch (Exception ex)
             {
@@ -179,24 +142,6 @@ namespace MauiGPT.ViewModels
             }
         }
 
-        private void ClearPreviousSession()
-        {
-            try
-            {
-                SecureStorage.Remove("api_key");
-                SecureStorage.Remove("session_id");
-                SecureStorage.Remove("session_expires");
-                SecureStorage.Remove("user_id");
-                
-                AppLogger.Log("✅ Previous session cleared - starting fresh");
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Error clearing session", ex);
-            }
-        }
-
-        // ✅ NEW: Test connection with detailed error logging
         private async Task<bool> TestConnectionWithDetailsAsync(string apiKey)
         {
             try
@@ -224,19 +169,9 @@ namespace MauiGPT.ViewModels
                 AppLogger.LogError($"   Server returned: {response.StatusCode}", null);
                 return false;
             }
-            catch (HttpRequestException httpEx)
-            {
-                AppLogger.LogError($"   HTTP Exception: {httpEx.Message}", httpEx);
-                return false;
-            }
-            catch (TaskCanceledException timeoutEx)
-            {
-                AppLogger.LogError($"   Timeout: {timeoutEx.Message}", timeoutEx);
-                return false;
-            }
             catch (Exception ex)
             {
-                AppLogger.LogError($"   Unknown error: {ex.Message}", ex);
+                AppLogger.LogError($"   Exception: {ex.Message}", ex);
                 return false;
             }
         }

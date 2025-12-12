@@ -9,7 +9,7 @@ namespace KennyGPT.Data
 
         public DbSet<MConversation> Conversations { get; set; }
         public DbSet<MChatMessage> ChatMessages { get; set; }
-        public DbSet<MUserSession> UserSessions { get; set; } // ✅ Add this
+        public DbSet<MUserSession> UserSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -21,12 +21,9 @@ namespace KennyGPT.Data
                 .HasForeignKey(m => m.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ✅ Add index for session lookup
+            // ✅ Keep API key index for session lookup
             modelBuilder.Entity<MUserSession>()
                 .HasIndex(s => s.ApiKey);
-
-            modelBuilder.Entity<MUserSession>()
-                .HasIndex(s => s.ExpiresAt);
         }
     }
 }

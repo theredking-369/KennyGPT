@@ -30,6 +30,27 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
 
+        /* Overlay for mobile */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0; /* ✅ Start transparent */
+            transition: opacity 0.3s ease; /* ✅ Smooth fade */
+        }
+
+        @media (max-width: 768px) {
+            .mobile-overlay.show {
+                display: block;
+                opacity: 1; /* ✅ Fade in */
+            }
+        }
+
         /* Loading Modal Styles */
         .loading-modal {
             position: fixed;
@@ -123,15 +144,6 @@
                 opacity: 0.7;
             }
 
-        .session-info {
-            font-size: 11px;
-            color: #ffc107;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         .theme-toggle {
             position: absolute;
             top: 20px;
@@ -165,11 +177,18 @@
             font-size: 14px;
             font-weight: 600;
             transition: all 0.3s ease;
+            touch-action: manipulation; /* ✅ Prevent double-tap zoom */
         }
 
             .new-chat-btn:hover {
                 transform: translateY(-1px);
                 box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            /* ✅ Add active state for mobile */
+            .new-chat-btn:active {
+                transform: translateY(0);
+                opacity: 0.9;
             }
 
         .conversations-header {
@@ -192,6 +211,10 @@
             transition: all 0.2s ease;
             border-left: 3px solid transparent;
             position: relative;
+            touch-action: manipulation; /* ✅ Prevent double-tap zoom */
+            display: flex; /* ✅ Add flexbox for delete button */
+            justify-content: space-between;
+            align-items: center;
         }
 
             .conversation-item:hover {
@@ -202,6 +225,16 @@
                 background: #2d2d2d;
                 border-left-color: #667eea;
             }
+
+            /* ✅ Add active state for mobile touch */
+            .conversation-item:active {
+                background: #3d3d3d;
+            }
+
+        .conversation-content {
+            flex: 1;
+            min-width: 0; /* ✅ Allow text truncation */
+        }
 
         .conversation-title {
             font-size: 14px;
@@ -215,6 +248,48 @@
         .conversation-date {
             font-size: 12px;
             opacity: 0.6;
+        }
+
+        /* ✅ Delete button styles */
+        .delete-conversation-btn {
+            background: rgba(220, 53, 69, 0.1);
+            border: none;
+            color: #dc3545;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-left: 8px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .conversation-item:hover .delete-conversation-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .delete-conversation-btn:hover {
+            background: rgba(220, 53, 69, 0.2);
+            transform: scale(1.1);
+        }
+
+        .delete-conversation-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ✅ Always show delete button on mobile (no hover) */
+        @media (max-width: 768px) {
+            .delete-conversation-btn {
+                opacity: 0.7;
+                pointer-events: auto;
+            }
         }
 
         /* Main Chat Styles */
@@ -257,6 +332,13 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 18px;
+            transition: all 0.2s ease; /* ✅ Add transition */
+        }
+
+        /* ✅ Add hover/active states for mobile menu */
+        .mobile-menu-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(0.95);
         }
 
         .system-prompt-section {
@@ -408,6 +490,7 @@
             font-size: 20px;
             transition: all 0.3s ease;
             flex-shrink: 0;
+            touch-action: manipulation; /* ✅ Prevent double-tap zoom on mobile */
         }
 
             .send-button:hover {
@@ -419,6 +502,11 @@
                 opacity: 0.6;
                 cursor: not-allowed;
                 transform: none;
+            }
+
+            /* ✅ Add active state for mobile touch feedback */
+            .send-button:active:not(:disabled) {
+                transform: scale(0.95);
             }
 
         .loading {
@@ -562,7 +650,18 @@
                 color: #a0a0a0;
             }
 
+            /* ✅ Dark mode delete button */
+            body.dark-mode .delete-conversation-btn {
+                background: rgba(220, 53, 69, 0.15);
+                color: #ff6b6b;
+            }
+
+            body.dark-mode .delete-conversation-btn:hover {
+                background: rgba(220, 53, 69, 0.25);
+            }
+
         @media (max-width: 768px) {
+            /* Mobile Optimizations */
             .app-container {
                 width: 100%;
                 height: 100vh;
@@ -576,10 +675,12 @@
                 height: 100vh;
                 z-index: 1000;
                 transform: translateX(-100%);
+                width: 280px; /* ✅ Slightly narrower for mobile */
             }
 
                 .sidebar.open {
                     transform: translateX(0);
+                    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3); /* ✅ Add shadow when open */
                 }
 
             .mobile-menu-btn {
@@ -594,6 +695,10 @@
                 max-width: 85%;
             }
 
+            .chat-header {
+                padding: 15px; /* ✅ Smaller padding for mobile */
+            }
+
             .chat-header h1 {
                 font-size: 20px;
             }
@@ -602,34 +707,84 @@
                 padding: 12px 15px;
             }
 
+            /* ✅ Optimize system prompt for mobile - make it collapsible */
+            .system-prompt-input {
+                font-size: 14px;
+            }
+
             .chat-messages {
-                padding: 15px;
+                padding: 15px 10px; /* ✅ Less horizontal padding */
+            }
+
+            .message {
+                margin-bottom: 15px; /* ✅ Tighter spacing */
+            }
+
+            .message-avatar {
+                width: 30px; /* ✅ Smaller avatars */
+                height: 30px;
+                font-size: 12px;
+                margin-right: 8px;
+            }
+
+            .message.user .message-avatar {
+                margin-left: 8px;
+                margin-right: 0;
+            }
+
+            .message-content {
+                padding: 12px 16px; /* ✅ Slightly smaller padding */
+                font-size: 15px; /* ✅ Comfortable reading size */
             }
 
             .chat-input-container {
-                padding: 15px;
+                padding: 12px 15px; /* ✅ Less padding */
+                gap: 8px; /* ✅ Smaller gap */
+            }
+
+            .chat-input {
+                font-size: 16px; /* ✅ Prevent iOS zoom on focus */
+                min-height: 44px; /* ✅ iOS touch target minimum */
+            }
+
+            .send-button {
+                width: 44px; /* ✅ iOS touch target minimum */
+                height: 44px;
             }
 
             .loading-box {
                 padding: 30px 20px;
             }
+
+            /* ✅ Make conversation items easier to tap */
+            .conversation-item {
+                padding: 14px 20px; /* ✅ Larger touch target */
+            }
+
+            /* ✅ Optimize new chat button for mobile */
+            .new-chat-btn {
+                padding: 14px 20px; /* ✅ Larger touch target */
+                font-size: 15px;
+            }
         }
 
-        /* Overlay for mobile */
-        .mobile-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
+        /* ✅ Extra small devices optimization */
+        @media (max-width: 375px) {
+            .sidebar {
+                width: 260px; /* ✅ Even narrower for small phones */
+            }
 
-        @media (max-width: 768px) {
-            .mobile-overlay.show {
-                display: block;
+            .message-content {
+                max-width: 90%; /* ✅ Use more screen width */
+                font-size: 14px;
+            }
+
+            .chat-header h1 {
+                font-size: 18px;
+            }
+
+            .chat-input-container {
+                padding: 10px 12px;
             }
         }
     </style>
@@ -639,7 +794,7 @@
     <div class="loading-modal" id="loadingModal">
         <div class="loading-box">
             <h2>💬 KennyGPT</h2>
-            <p>Starting your free 1-hour session...</p>
+            <p>Initializing your session...</p>
             <div class="loading-spinner"></div>
             <div class="status-message" id="statusMessage">Connecting to server...</div>
         </div>
@@ -653,9 +808,6 @@
             <div class="sidebar-header">
                 <h2>KennyGPT</h2>
                 <p>Your Personal AI Assistant</p>
-                <div class="session-info" id="sessionInfo">
-                    ⏰ Session expires in: <span id="timeRemaining">--</span>
-                </div>
                 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
                     <span class="theme-icon">🌙</span>
                 </button>
@@ -694,7 +846,7 @@
                 <div class="empty-state">
                     <div class="empty-state-icon">💬</div>
                     <h3>Welcome to KennyGPT!</h3>
-                    <p>Start a conversation by typing a message below. You have 1 hour of free access!</p>
+                    <p>Start a conversation by typing a message below. Your session is ready!</p>
                 </div>
             </div>
 
@@ -727,8 +879,6 @@
         let apiKey = CONFIG.PUBLIC_DEMO_KEY;
         let isAuthenticated = false;
         let sessionId = null;
-        let sessionExpires = null;
-        let timeRemainingInterval = null;
 
         // DOM Elements
         const chatMessages = document.getElementById('chatMessages');
@@ -741,7 +891,6 @@
         const mobileOverlay = document.getElementById('mobileOverlay');
         const loadingModal = document.getElementById('loadingModal');
         const statusMessage = document.getElementById('statusMessage');
-        const timeRemainingDisplay = document.getElementById('timeRemaining');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
@@ -757,8 +906,19 @@
                     sendMessage();
                 }
 
+                // ✅ Auto-resize textarea as user types
                 this.style.height = 'auto';
                 this.style.height = this.scrollHeight + 'px';
+            });
+
+            // ✅ Prevent iOS Safari from zooming on input focus
+            messageInput.addEventListener('focus', function() {
+                if (window.innerWidth <= 768) {
+                    // Scroll input into view on mobile
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
             });
 
             systemPromptInput.addEventListener('input', function () {
@@ -773,9 +933,26 @@
         // Session Management
         async function startSession() {
             try {
-                // Clear any previous session data
-                sessionStorage.clear();
-
+                // ✅ Check for existing session first (persists across refreshes)
+                const existingSessionId = sessionStorage.getItem('kennygpt_session_id');
+                
+                if (existingSessionId) {
+                    // ✅ Session found - reuse it (no expiry check)
+                    sessionId = existingSessionId;
+                    apiKey = sessionStorage.getItem('kennygpt_api_key') || CONFIG.PUBLIC_DEMO_KEY;
+                    
+                    console.log(`✅ Resuming existing session: ${sessionId}`);
+                    statusMessage.textContent = 'Resuming session...';
+                    
+                    isAuthenticated = true;
+                    loadingModal.classList.add('hidden');
+                    
+                    await loadConversationsFromServer();
+                    messageInput.focus();
+                    return; // ✅ Don't create new session
+                }
+                
+                // ✅ Only create new session if none exists
                 statusMessage.textContent = 'Creating your session...';
 
                 const response = await fetch(`${CONFIG.API_BASE_URL}/chat/session`, {
@@ -788,20 +965,15 @@
                 if (response.ok) {
                     const session = await response.json();
                     sessionId = session.id;
-                    sessionExpires = session.expiresAt;
 
                     sessionStorage.setItem('kennygpt_api_key', CONFIG.PUBLIC_DEMO_KEY);
                     sessionStorage.setItem('kennygpt_session_id', sessionId);
-                    sessionStorage.setItem('kennygpt_session_expires', sessionExpires);
 
-                    console.log(`✅ Session created: ${sessionId}`);
-                    console.log(`⏰ Expires: ${new Date(sessionExpires).toLocaleString()}`);
+                    console.log(`✅ New session created: ${sessionId}`);
+                    console.log(`   Type: PERMANENT (no expiration)`);
 
                     isAuthenticated = true;
                     loadingModal.classList.add('hidden');
-
-                    // Start countdown timer
-                    startTimeRemaining();
 
                     await loadConversationsFromServer();
                     messageInput.focus();
@@ -813,30 +985,6 @@
                 statusMessage.textContent = 'Connection failed. Please refresh the page.';
                 statusMessage.style.color = '#dc3545';
             }
-        }
-
-        function startTimeRemaining() {
-            updateTimeRemaining();
-            timeRemainingInterval = setInterval(updateTimeRemaining, 1000);
-        }
-
-        function updateTimeRemaining() {
-            if (!sessionExpires) return;
-
-            const now = new Date();
-            const expires = new Date(sessionExpires);
-            const diff = expires - now;
-
-            if (diff <= 0) {
-                clearInterval(timeRemainingInterval);
-                timeRemainingDisplay.textContent = 'Expired';
-                alert('⏰ Your 1-hour session has expired. Please refresh the page to start a new session.');
-                return;
-            }
-
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            timeRemainingDisplay.textContent = `${minutes}m ${seconds}s`;
         }
 
         async function loadConversationsFromServer() {
@@ -857,20 +1005,16 @@
                     headers: headers
                 });
 
-                if (response.status === 401) {
-                    const data = await response.json();
-                    if (data.expired) {
-                        alert('⏰ Your session has expired. Please refresh the page.');
-                    }
-                    return;
-                }
-
                 if (response.ok) {
                     conversations = await response.json();
                     renderConversationsList();
 
-                    if (conversations.length > 0) {
-                        await loadConversation(conversations[0].id);
+                    // ✅ Only auto-load first conversation on desktop OR if no conversation is currently active
+                    if (conversations.length > 0 && !currentConversationId) {
+                        // Only auto-load on initial page load, not after sending messages
+                        if (window.innerWidth > 768 || conversations.length === 1) {
+                            await loadConversation(conversations[0].id);
+                        }
                     }
                 }
             } catch (error) {
@@ -899,11 +1043,6 @@
                     }
                 );
 
-                if (response.status === 401) {
-                    alert('⏰ Your session has expired.');
-                    return;
-                }
-
                 if (response.ok) {
                     const messages = await response.json();
 
@@ -925,9 +1064,8 @@
 
                     updateActiveConversation();
 
-                    if (window.innerWidth <= 768) {
-                        toggleSidebar();
-                    }
+                    // ✅ REMOVED: Auto-toggle sidebar on mobile - let user control it manually
+                    // This was causing sidebar to open after every message sent
                 }
             } catch (error) {
                 console.error('Error loading conversation:', error);
@@ -949,17 +1087,38 @@
             conversations.forEach(conversation => {
                 const item = document.createElement('div');
                 item.className = 'conversation-item';
-                item.onclick = () => loadConversation(conversation.id);
-
+                
                 const date = new Date(conversation.createdAt);
                 const formattedDate = date.toLocaleDateString() + ' ' +
                     date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                item.innerHTML = `
-                        <div class="conversation-title">${conversation.title}</div>
-                        <div class="conversation-date">${formattedDate}</div>
-                    `;
+                // ✅ Create conversation content (clickable area)
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'conversation-content';
+                contentDiv.onclick = () => {
+                    loadConversation(conversation.id);
+                    // Close sidebar on mobile after selecting conversation
+                    if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                        toggleSidebar();
+                    }
+                };
+                contentDiv.innerHTML = `
+                    <div class="conversation-title">${conversation.title}</div>
+                    <div class="conversation-date">${formattedDate}</div>
+                `;
 
+                // ✅ Create delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-conversation-btn';
+                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.title = 'Delete conversation';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation(); // Prevent triggering conversation load
+                    deleteConversation(conversation.id, conversation.title);
+                };
+
+                item.appendChild(contentDiv);
+                item.appendChild(deleteBtn);
                 conversationsList.appendChild(item);
             });
 
@@ -983,7 +1142,7 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">💬</div>
                         <h3>Welcome to KennyGPT!</h3>
-                        <p>Start a conversation by typing a message below. You have 1 hour of free access!</p>
+                        <p>Start a conversation by typing a message below. Your session is ready!</p>
                     </div>
                 `;
         }
@@ -1047,6 +1206,54 @@
             if (window.innerWidth <= 768) {
                 sidebar.classList.toggle('open');
                 mobileOverlay.classList.toggle('show');
+                
+                // ✅ Prevent body scroll when sidebar is open on mobile
+                if (sidebar.classList.contains('open')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+
+        // ✅ Close sidebar when user taps on overlay (mobile only)
+        mobileOverlay.addEventListener('click', function(e) {
+            // Close sidebar when clicking anywhere on the overlay
+            if (sidebar.classList.contains('open')) {
+                toggleSidebar();
+            }
+        });
+
+        // ✅ Also close sidebar when tapping outside on the chat area (backup method)
+        document.addEventListener('click', function(e) {
+            // Only on mobile when sidebar is open
+            if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                // Check if click is outside sidebar and not on the menu button
+                if (!sidebar.contains(e.target) && !e.target.closest('.mobile-menu-btn')) {
+                    toggleSidebar();
+                }
+            }
+        });
+
+        // ✅ NEW: Add swipe gesture to close sidebar on mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        sidebar.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        sidebar.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+        
+        function handleSwipe() {
+            // Swipe left (close sidebar)
+            if (touchStartX - touchEndX > 50) {
+                if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                    toggleSidebar();
+                }
             }
         }
 
@@ -1072,6 +1279,11 @@
 
             const loadingContentDiv = addMessageToDOM('', false, true);
 
+            // ✅ Ensure sidebar is closed on mobile before sending
+            if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+                toggleSidebar();
+            }
+
             try {
                 const requestBody = {
                     message: message,
@@ -1095,11 +1307,7 @@
                 });
 
                 if (response.status === 401) {
-                    const data = await response.json();
-                    if (data.expired) {
-                        alert('⏰ Your 1-hour session has expired. Please refresh the page.');
-                    }
-                    throw new Error('Session expired');
+                    throw new Error('Session invalid');
                 }
 
                 if (!response.ok) {
@@ -1113,6 +1321,7 @@
                 loadingContentDiv.innerHTML = '';
                 loadingContentDiv.textContent = data.response;
 
+                // ✅ Reload conversations but DON'T trigger sidebar opening
                 await loadConversationsFromServer();
 
                 updateActiveConversation();
@@ -1145,6 +1354,53 @@
             }
         }
 
+        // ✅ NEW: Delete conversation function
+        async function deleteConversation(conversationId, conversationTitle) {
+            // Confirm deletion
+            const confirmed = confirm(`Delete "${conversationTitle}"?\n\nThis action cannot be undone.`);
+            
+            if (!confirmed) return;
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': apiKey
+                };
+
+                if (sessionId) {
+                    headers['X-Session-Id'] = sessionId;
+                }
+
+                const response = await fetch(
+                    `${CONFIG.API_BASE_URL}/chat/conversations/${conversationId}`,
+                    {
+                        method: 'DELETE',
+                        headers: headers
+                    }
+                );
+
+                if (response.ok) {
+                    console.log(`✅ Conversation deleted: ${conversationId}`);
+
+                    // Remove from local array
+                    conversations = conversations.filter(c => c.id !== conversationId);
+                    
+                    // Re-render list
+                    renderConversationsList();
+
+                    // If deleted conversation was active, start new conversation
+                    if (currentConversationId === conversationId) {
+                        startNewConversation();
+                    }
+                } else {
+                    throw new Error('Failed to delete conversation');
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
+                alert('Failed to delete conversation. Please try again.');
+            }
+        }
+
         window.addEventListener('unhandledrejection', function (event) {
             console.error('Unhandled promise rejection:', event.reason);
         });
@@ -1158,9 +1414,7 @@
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', function () {
-            if (timeRemainingInterval) {
-                clearInterval(timeRemainingInterval);
-            }
+            // ✅ REMOVED: timer cleanup - no longer needed
         });
     </script>
 </body>

@@ -43,16 +43,6 @@ namespace MauiGPT.Services
                     request
                 );
 
-                // ✅ Check for session expiry
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (content.Contains("expired") || content.Contains("Session expired"))
-                    {
-                        throw new Exception("SESSION_EXPIRED");
-                    }
-                }
-
                 response.EnsureSuccessStatusCode();
 
                 return await response.Content.ReadFromJsonAsync<MChatResponse>() 
@@ -80,16 +70,6 @@ namespace MauiGPT.Services
 
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/chat/conversations");
                 
-                // ✅ Check for session expiry
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (content.Contains("expired"))
-                    {
-                        throw new Exception("SESSION_EXPIRED");
-                    }
-                }
-
                 response.EnsureSuccessStatusCode();
 
                 return await response.Content.ReadFromJsonAsync<List<MConversation>>() ?? new List<MConversation>();
@@ -117,16 +97,6 @@ namespace MauiGPT.Services
                 var response = await _httpClient.GetAsync(
                     $"{_apiBaseUrl}/chat/conversations/{conversationId}/messages"
                 );
-
-                // ✅ Check for session expiry
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (content.Contains("expired"))
-                    {
-                        throw new Exception("SESSION_EXPIRED");
-                    }
-                }
 
                 response.EnsureSuccessStatusCode();
 

@@ -93,31 +93,7 @@ namespace MauiGPT.ViewModels
                 return;
             }
 
-            // ✅ Check session expiry
-            await CheckSessionExpiry();
-
             await LoadConversationsAsync();
-        }
-
-        // ✅ NEW: Check if session has expired
-        private async Task CheckSessionExpiry()
-        {
-            var expiresString = await SecureStorage.GetAsync("session_expires");
-            if (!string.IsNullOrEmpty(expiresString))
-            {
-                if (DateTime.TryParse(expiresString, out var expires))
-                {
-                    if (DateTime.UtcNow >= expires)
-                    {
-                        AppLogger.Log("⏰ Session expired");
-                        await Application.Current.MainPage.DisplayAlert(
-                            "Session Expired",
-                            "Your 1-hour session has expired. Please login again.",
-                            "OK");
-                        await LogoutAsync();
-                    }
-                }
-            }
         }
 
         private async Task LoadConversationsAsync()
@@ -141,17 +117,6 @@ namespace MauiGPT.ViewModels
             }
             catch (Exception ex)
             {
-                // ✅ Check for session expiry
-                if (ex.Message.Contains("SESSION_EXPIRED"))
-                {
-                    await Application.Current.MainPage.DisplayAlert(
-                        "Session Expired",
-                        "Your 1-hour session has expired. Please login again.",
-                        "OK");
-                    await LogoutAsync();
-                    return;
-                }
-
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to load conversations: {ex.Message}", "OK");
             }
             finally
@@ -182,17 +147,6 @@ namespace MauiGPT.ViewModels
             }
             catch (Exception ex)
             {
-                // ✅ Check for session expiry
-                if (ex.Message.Contains("SESSION_EXPIRED"))
-                {
-                    await Application.Current.MainPage.DisplayAlert(
-                        "Session Expired",
-                        "Your session has expired.",
-                        "OK");
-                    await LogoutAsync();
-                    return;
-                }
-
                 await Application.Current.MainPage.DisplayAlert("Error", $"Failed to load conversation: {ex.Message}", "OK");
             }
         }
@@ -259,17 +213,6 @@ namespace MauiGPT.ViewModels
             {
                 Messages.Remove(loadingMessage);
 
-                // ✅ Check for session expiry
-                if (ex.Message.Contains("SESSION_EXPIRED"))
-                {
-                    await Application.Current.MainPage.DisplayAlert(
-                        "Session Expired",
-                        "Your 1-hour session has expired. Please login again.",
-                        "OK");
-                    await LogoutAsync();
-                    return;
-                }
-
                 Messages.Add(new ChatMessageViewModel
                 {
                     Content = $"❌ Error: {ex.Message}",
@@ -295,7 +238,6 @@ namespace MauiGPT.ViewModels
             {
                 SecureStorage.Remove("api_key");
                 SecureStorage.Remove("session_id");
-                SecureStorage.Remove("session_expires");
                 SecureStorage.Remove("user_id");
                 
                 await Shell.Current.GoToAsync("..");

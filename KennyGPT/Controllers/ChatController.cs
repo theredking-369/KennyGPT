@@ -24,7 +24,7 @@ namespace KennyGPT.Controllers
             _logger = logger;
         }
 
-        // ✅ ENHANCED: Create session endpoint with detailed logging
+        // ✅ SIMPLIFIED: Create session endpoint (no expiration)
         [HttpPost("session")]
         public async Task<ActionResult<MUserSession>> CreateSession()
         {
@@ -32,29 +32,29 @@ namespace KennyGPT.Controllers
             {
                 _logger.LogInformation("📝 Session creation request received");
 
-                // Extract API key from header (already validated by middleware)
                 var apiKey = Request.Headers["X-API-Key"].ToString();
                 _logger.LogInformation($"   API Key: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : "Present")}");
 
-                // Create new session
+                // Create permanent session (no expiration)
                 var session = new MUserSession
                 {
                     Id = Guid.NewGuid().ToString(),
-                    UserId = Guid.NewGuid().ToString(), // Unique user ID per session
-                    ApiKey = apiKey == "public-demo-2024" ? null : apiKey, // Don't store public key
-                    CreatedAt = DateTime.UtcNow,
-                    ExpiresAt = DateTime.UtcNow.AddHours(1) // 1 hour session
+                    UserId = Guid.NewGuid().ToString(),
+                    ApiKey = apiKey == "public-demo-2024" ? null : apiKey,
+                    CreatedAt = DateTime.UtcNow
+                    // ✅ NO ExpiresAt - session is permanent
                 };
 
                 _logger.LogInformation($"   Session ID: {session.Id}");
                 _logger.LogInformation($"   User ID: {session.UserId}");
+                _logger.LogInformation($"   Type: PERMANENT (no expiration)");
 
                 _dbContext.UserSessions.Add(session);
 
                 _logger.LogInformation("   Saving to database...");
                 await _dbContext.SaveChangesAsync();
 
-                _logger.LogInformation($"✅ Session created successfully: {session.Id} for user: {session.UserId}");
+                _logger.LogInformation($"✅ Session created successfully");
 
                 return Ok(session);
             }
@@ -80,31 +80,27 @@ namespace KennyGPT.Controllers
             }
         }
 
-        // ✅ UPDATED: Get conversations filtered by session
+        // ✅ SIMPLIFIED: Get conversations (no expiry check)
         [HttpGet("conversations")]
         public async Task<ActionResult<List<MConversation>>> GetConversations()
         {
             try
             {
-                // Get session ID from header
                 var sessionId = Request.Headers["X-Session-Id"].ToString();
 
                 if (string.IsNullOrEmpty(sessionId))
                 {
-                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                    return Unauthorized(new { message = "Session ID is required" });
                 }
 
-                // Validate session
+                // Validate session exists (no expiration check)
                 var session = await _dbContext.UserSessions.FindAsync(sessionId);
                 if (session == null)
                 {
-                    return Unauthorized(new { expired = false, message = "Invalid session" });
+                    return Unauthorized(new { message = "Invalid session" });
                 }
 
-                if (DateTime.UtcNow >= session.ExpiresAt)
-                {
-                    return Unauthorized(new { expired = true, message = "Session expired" });
-                }
+                // ✅ REMOVED: ExpiresAt check - sessions never expire
 
                 // Get conversations for this user only
                 var conversations = await _dbContext.Conversations
@@ -122,31 +118,27 @@ namespace KennyGPT.Controllers
             }
         }
 
-        // ✅ UPDATED: Send message with session validation
+        // ✅ SIMPLIFIED: Send message (no expiry check)
         [HttpPost("send")]
         public async Task<ActionResult<MChatResponse>> SendMessage([FromBody] MChatRequest request)
         {
             try
             {
-                // Get session ID from header
                 var sessionId = Request.Headers["X-Session-Id"].ToString();
 
                 if (string.IsNullOrEmpty(sessionId))
                 {
-                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                    return Unauthorized(new { message = "Session ID is required" });
                 }
 
-                // Validate session
+                // Validate session exists (no expiration check)
                 var session = await _dbContext.UserSessions.FindAsync(sessionId);
                 if (session == null)
                 {
-                    return Unauthorized(new { expired = false, message = "Invalid session" });
+                    return Unauthorized(new { message = "Invalid session" });
                 }
 
-                if (DateTime.UtcNow >= session.ExpiresAt)
-                {
-                    return Unauthorized(new { expired = true, message = "Session expired" });
-                }
+                // ✅ REMOVED: ExpiresAt check - sessions never expire
 
                 // Get or create conversation with user ID from session
                 var conversation = await GetOrCreateConversation(request.ConversationId, session.UserId);
@@ -214,14 +206,17 @@ namespace KennyGPT.Controllers
 
                 if (string.IsNullOrEmpty(sessionId))
                 {
-                    return Unauthorized(new { expired = false, message = "Session ID is required" });
+                    return Unauthorized(new { message = "Session ID is required" });
                 }
 
+                // Validate session exists (no expiration check)
                 var session = await _dbContext.UserSessions.FindAsync(sessionId);
-                if (session == null || DateTime.UtcNow >= session.ExpiresAt)
+                if (session == null)
                 {
-                    return Unauthorized(new { expired = true, message = "Session expired" });
+                    return Unauthorized(new { message = "Invalid session" });
                 }
+
+                // ✅ REMOVED: ExpiresAt check - sessions never expire
 
                 var messages = await _dbContext.ChatMessages
                     .Where(m => m.ConversationId == conversationId)
