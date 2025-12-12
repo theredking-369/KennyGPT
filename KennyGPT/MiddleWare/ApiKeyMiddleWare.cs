@@ -22,6 +22,13 @@
                 return;
             }
 
+            // Skip API key check for authentication endpoints
+            if (context.Request.Path.StartsWithSegments("/api/auth"))
+            {
+                await _next(context);
+                return;
+            }
+
             // Skip API key check for non-API endpoints
             if (!context.Request.Path.StartsWithSegments("/api"))
             {

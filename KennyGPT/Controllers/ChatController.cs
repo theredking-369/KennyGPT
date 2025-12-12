@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace KennyGPT.Controllers
 {
@@ -16,15 +20,17 @@ namespace KennyGPT.Controllers
         private readonly IAzureService _openAIService;
         private readonly ChatDbContext _dbContext;
         private readonly ILogger<ChatController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public ChatController(IAzureService openAIService, ChatDbContext dbContext, ILogger<ChatController> logger)
+        public ChatController(IAzureService openAIService, ChatDbContext dbContext, ILogger<ChatController> logger, IConfiguration configuration)
         {
             _openAIService = openAIService;
             _dbContext = dbContext;
             _logger = logger;
+            _configuration = configuration;
         }
 
-        // ✅ SIMPLIFIED: Create session endpoint (no expiration)
+        // ✅ FIXED: Extract user ID from JWT token for authenticated users
         [HttpPost("session")]
         public async Task<ActionResult<MUserSession>> CreateSession()
         {
@@ -33,21 +39,54 @@ namespace KennyGPT.Controllers
                 _logger.LogInformation("📝 Session creation request received");
 
                 var apiKey = Request.Headers["X-API-Key"].ToString();
+                var authHeader = Request.Headers["Authorization"].ToString();
+                
                 _logger.LogInformation($"   API Key: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : "Present")}");
+                _logger.LogInformation($"   Auth Header: {(string.IsNullOrEmpty(authHeader) ? "MISSING" : "Present")}");
 
-                // Create permanent session (no expiration)
+                string userId;
+                string? authenticatedUsername = null;
+
+                // ✅ NEW: Check if user is authenticated with JWT token
+                if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+                {
+                    var token = authHeader.Substring("Bearer ".Length).Trim();
+                    var userIdFromToken = ExtractUserIdFromToken(token);
+                    
+                    if (!string.IsNullOrEmpty(userIdFromToken))
+                    {
+                        // ✅ Use the authenticated user's ID
+                        userId = userIdFromToken;
+                        authenticatedUsername = ExtractUsernameFromToken(token);
+                        _logger.LogInformation($"   ✅ Authenticated user: {authenticatedUsername}");
+                        _logger.LogInformation($"   User ID from token: {userId}");
+                    }
+                    else
+                    {
+                        // Token is invalid, create guest session
+                        userId = Guid.NewGuid().ToString();
+                        _logger.LogInformation($"   ⚠️ Invalid token, creating guest session");
+                    }
+                }
+                else
+                {
+                    // No authentication, create guest session
+                    userId = Guid.NewGuid().ToString();
+                    _logger.LogInformation($"   👤 Guest user, creating anonymous session");
+                }
+
+                // Create session with appropriate user ID
                 var session = new MUserSession
                 {
                     Id = Guid.NewGuid().ToString(),
-                    UserId = Guid.NewGuid().ToString(),
+                    UserId = userId, // ✅ Now uses real user ID for authenticated users!
                     ApiKey = apiKey == "public-demo-2024" ? null : apiKey,
                     CreatedAt = DateTime.UtcNow
-                    // ✅ NO ExpiresAt - session is permanent
                 };
 
                 _logger.LogInformation($"   Session ID: {session.Id}");
                 _logger.LogInformation($"   User ID: {session.UserId}");
-                _logger.LogInformation($"   Type: PERMANENT (no expiration)");
+                _logger.LogInformation($"   Type: {(authenticatedUsername != null ? $"AUTHENTICATED ({authenticatedUsername})" : "GUEST")} (no expiration)");
 
                 _dbContext.UserSessions.Add(session);
 
@@ -77,6 +116,61 @@ namespace KennyGPT.Controllers
                     error = "Error creating session",
                     message = ex.Message
                 });
+            }
+        }
+
+        // ✅ NEW: Helper method to extract user ID from JWT token
+        private string? ExtractUserIdFromToken(string token)
+        {
+            try
+            {
+                var jwtKey = _configuration["Jwt:Key"] ?? "your-super-secret-key-change-in-production-min-32-chars";
+                var jwtIssuer = _configuration["Jwt:Issuer"] ?? "KennyGPT";
+                var jwtAudience = _configuration["Jwt:Audience"] ?? "KennyGPT-Users";
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(jwtKey);
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtAudience,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                
+                // Extract user ID from the "sub" claim
+                var userIdClaim = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+                return userIdClaim?.Value;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Failed to extract user ID from token: {ex.Message}");
+                return null;
+            }
+        }
+
+        // ✅ NEW: Helper method to extract username from JWT token
+        private string? ExtractUsernameFromToken(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadJwtToken(token);
+                
+                var usernameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "username");
+                return usernameClaim?.Value;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Failed to extract username from token: {ex.Message}");
+                return null;
             }
         }
 

@@ -10,6 +10,7 @@ namespace KennyGPT.Data
         public DbSet<MConversation> Conversations { get; set; }
         public DbSet<MChatMessage> ChatMessages { get; set; }
         public DbSet<MUserSession> UserSessions { get; set; }
+        public DbSet<MUser> Users { get; set; } // ✅ NEW: User accounts table
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,6 +25,11 @@ namespace KennyGPT.Data
             // ✅ Keep API key index for session lookup
             modelBuilder.Entity<MUserSession>()
                 .HasIndex(s => s.ApiKey);
+
+            // ✅ NEW: User model configuration
+            modelBuilder.Entity<MUser>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
         }
     }
 }

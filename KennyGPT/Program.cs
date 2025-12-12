@@ -1,9 +1,12 @@
-using Microsoft.EntityFrameworkCore.Sqlite;
+﻿using Microsoft.EntityFrameworkCore.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using KennyGPT.Data;
 using KennyGPT.Services;
 using KennyGPT.Interfaces;
 using KennyGPT.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace KennyGPT
 {
@@ -18,11 +21,38 @@ namespace KennyGPT
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddDbContext<ChatDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // ✅ JWT Authentication
+            var jwtKey = builder.Configuration["Jwt:Key"] ?? "your-super-secret-key-change-in-production-min-32-chars";
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "KennyGPT";
+            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "KennyGPT-Users";
 
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtIssuer,
+                        ValidAudience = jwtAudience,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
+            // Database
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<ChatDbContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Services
+            builder.Services.AddHttpClient(); // ✅ ADD THIS: Register HttpClient
             builder.Services.AddScoped<IAzureService, AzureService>();
-            builder.Services.AddHttpClient<ISerpAPIService, SerpAPIService>();
+            builder.Services.AddScoped<ISerpAPIService, SerpAPIService>();
+            builder.Services.AddScoped<IAuthService, AuthService>(); // ✅ NEW: Auth service
 
             // ? FIXED: Proper CORS configuration
             builder.Services.AddCors(options =>
@@ -63,6 +93,14 @@ namespace KennyGPT
                 }
             }
 
+            // ✅ Seed default users
+            using (var scope = app.Services.CreateScope())
+            {
+                var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+                authService.SeedDefaultUsersAsync().Wait();
+            }
+
+            // Configure the HTTP request pipeline.
             // ? CRITICAL FIX: CORS MUST BE BEFORE ApiKeyMiddleware!
             app.UseCors("AllowFrontend");
 
@@ -86,8 +124,12 @@ namespace KennyGPT
             }
 
             app.UseRouting();
+            app.UseAuthentication(); // ✅ Authentication & Authorization middleware
             app.UseAuthorization();
             app.MapControllers();
+
+            // Serve HTML file
+            app.MapFallbackToFile("index.html");
 
             app.Run();
         }
