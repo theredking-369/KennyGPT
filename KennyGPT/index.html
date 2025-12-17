@@ -991,6 +991,17 @@
                 }
             }
 
+            // ✅ CRITICAL FIX: If we have a JWT token now, clear any old guest session
+            // This handles the case where user opens a new tab after logging in
+            if (authToken && currentUser) {
+                const existingSessionId = sessionStorage.getItem('kennygpt_session_id');
+                if (existingSessionId) {
+                    console.log('⚠️ Found old session while authenticated - clearing to create new authenticated session');
+                    sessionStorage.removeItem('kennygpt_session_id');
+                    sessionStorage.removeItem('kennygpt_api_key');
+                }
+            }
+
             // Update UI based on auth status
             updateUserUI();
             
