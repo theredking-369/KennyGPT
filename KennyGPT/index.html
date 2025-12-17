@@ -933,7 +933,7 @@
                 document.getElementById('themeToggle').innerHTML = '<span class="theme-icon">☀️</span>';
             }
 
-            // ✅ NEW: Check for authentication
+            // ✅ CRITICAL FIX: Check authentication FIRST, then start session
             checkAuthentication();
 
             messageInput.addEventListener('keydown', function (e) {
@@ -962,8 +962,8 @@
                 this.style.height = this.scrollHeight + 'px';
             });
 
-            // Auto-start session
-            startSession();
+            // ✅ REMOVED: Don't auto-start session here - called after auth check in checkAuthentication()
+            // startSession();
         });
 
         // ✅ NEW: Check if user is authenticated
@@ -993,6 +993,9 @@
 
             // Update UI based on auth status
             updateUserUI();
+            
+            // ✅ CRITICAL: Start session AFTER authentication check completes
+            startSession();
         }
 
         // ✅ NEW: Update UI to show user profile or guest prompt
@@ -1063,6 +1066,8 @@
                     apiKey = sessionStorage.getItem('kennygpt_api_key') || CONFIG.PUBLIC_DEMO_KEY;
                     
                     console.log(`✅ Resuming existing session: ${sessionId}`);
+                    console.log(`   Auth token present: ${authToken ? 'YES' : 'NO'}`);
+                    console.log(`   Current user: ${currentUser ? currentUser.username : 'Guest'}`);
                     statusMessage.textContent = 'Resuming session...';
                     
                     isAuthenticated = true;
@@ -1080,9 +1085,13 @@
                     'X-API-Key': CONFIG.PUBLIC_DEMO_KEY
                 };
 
-                // ✅ Add JWT token if user is logged in
+                // ✅ CRITICAL: Add JWT token if user is logged in
                 if (authToken) {
                     headers['Authorization'] = `Bearer ${authToken}`;
+                    console.log('✅ Sending JWT token with session creation');
+                    console.log(`   User: ${currentUser ? currentUser.username : 'Unknown'}`);
+                } else {
+                    console.log('👤 Creating guest session (no JWT token)');
                 }
 
                 const response = await fetch(`${CONFIG.API_BASE_URL}/chat/session`, {
@@ -1098,6 +1107,7 @@
                     sessionStorage.setItem('kennygpt_session_id', sessionId);
 
                     console.log(`✅ New session created: ${sessionId}`);
+                    console.log(`   User ID from backend: ${session.userId}`);
                     console.log(`   Type: ${currentUser ? 'AUTHENTICATED' : 'GUEST'} (no expiration)`);
 
                     isAuthenticated = true;
